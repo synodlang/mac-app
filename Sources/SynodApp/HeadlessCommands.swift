@@ -2,7 +2,7 @@ import Foundation
 import SynodCore
 import SynodWeb
 
-/// The hidden command-line modes: `--smoke`, `--export` and (task E) `--acceptance`.
+/// The hidden command-line modes: `--smoke`, `--export` and `--acceptance`.
 enum HeadlessCommands {
     static func run(_ args: [String]) async -> Int32 {
         if args.contains("--smoke") { return await smoke(args) }
@@ -11,12 +11,9 @@ enum HeadlessCommands {
         return 2
     }
 
-    /// Hook for task E: `--acceptance <module> --out <dir>` (Acceptance.swift). Until it exists the
-    /// flag is accepted but reports that it is not implemented (and --help does not list it).
+    /// `--acceptance <module> --out <dir> [--program raft] [--quick]` (Acceptance.swift).
     static func acceptance(_ args: [String]) async -> Int32 {
-        // TODO(task E): call the acceptance runner from Acceptance.swift here.
-        fail("--acceptance is not implemented in this build")
-        return 2
+        await Acceptance.run(args)
     }
 
     // MARK: Argument helpers

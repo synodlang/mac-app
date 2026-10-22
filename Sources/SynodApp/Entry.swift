@@ -16,9 +16,9 @@ enum Entry {
       Synod --export <module> <program> --out f.mp4
             [--size 1080p|4k] [--codec h264|hevc] [--fps 60] [--rate 1]
             [--seed N] [--mode ordered|proportional]
+      Synod --acceptance <module> --out <dir> [--program raft] [--quick]
+            smoke test, then export a program at 1080p60 and compare frames with the stage
       Synod --help
-
-    Headless flags implemented: --smoke --export
     """
 
     static func main() {
