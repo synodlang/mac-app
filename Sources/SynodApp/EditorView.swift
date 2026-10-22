@@ -26,17 +26,20 @@ final class SynodTextView: NSTextView {
 }
 
 /// Line numbers, error and warning marks and the lightbulb of a quick fix.
-final class EditorGutter: NSRulerView {
+final class EditorGutter: NSView {
     weak var document: EditorDocument?
     var onFixes: (([EditorFix], NSPoint) -> Void)?
     private let numberFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular)
 
     override var isFlipped: Bool { true }
 
-    init(scrollView: NSScrollView) {
-        super.init(scrollView: scrollView, orientation: .verticalRuler)
-        ruleThickness = 46
-        clientView = scrollView.documentView
+    static let thickness: CGFloat = 46
+    /// The text view whose lines are numbered.
+    weak var clientView: NSView?
+
+    init(client: NSView) {
+        super.init(frame: .zero)
+        clientView = client
     }
 
     required init(coder: NSCoder) { fatalError("not used") }
@@ -47,11 +50,11 @@ final class EditorGutter: NSRulerView {
         var height: CGFloat
     }
 
-    override func drawHashMarksAndLabels(in rect: NSRect) {
+    override func draw(_ rect: NSRect) {
         guard let tv = clientView as? NSTextView, let lm = tv.textLayoutManager,
               let cs = tv.textContentStorage, let doc = document else { return }
         EditorPalette.paper.color.blended(withFraction: 0.06, of: EditorPalette.ink.color)?.setFill()
-        NSRect(x: 0, y: rect.minY, width: ruleThickness, height: rect.height).fill()
+        bounds.fill()
         let visible = tv.visibleRect
         let inset = tv.textContainerOrigin.y
         let positions = doc.positions
@@ -75,7 +78,7 @@ final class EditorGutter: NSRulerView {
             let label = NSAttributedString(string: "\(line)", attributes: [
                 .font: self.numberFont, .foregroundColor: EditorPalette.quiet.color])
             let size = label.size()
-            label.draw(at: NSPoint(x: self.ruleThickness - size.width - 8, y: top + (lineHeight - size.height) / 2))
+            label.draw(at: NSPoint(x: Self.thickness - size.width - 8, y: top + (lineHeight - size.height) / 2))
             if doc.lineHighlight == line {
                 EditorPalette.critical.color.setFill()
                 NSRect(x: 0, y: top, width: 3, height: lineHeight).fill()
@@ -116,6 +119,30 @@ final class EditorGutter: NSRulerView {
     }
 }
 
+/// The gutter on the left and the scroll view with the text on the right.
+final class EditorContainer: NSView {
+    let scroll: NSScrollView
+    let gutter: EditorGutter
+
+    init(scroll: NSScrollView, gutter: EditorGutter) {
+        self.scroll = scroll
+        self.gutter = gutter
+        super.init(frame: .zero)
+        addSubview(scroll)
+        addSubview(gutter)
+        autoresizesSubviews = false
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func layout() {
+        super.layout()
+        let w = EditorGutter.thickness
+        gutter.frame = NSRect(x: 0, y: 0, width: w, height: bounds.height)
+        scroll.frame = NSRect(x: w, y: 0, width: max(0, bounds.width - w), height: bounds.height)
+    }
+}
+
 /// A text view on TextKit 2 over an `EditorDocument`: monospaced, colored by tokens, underlined by
 /// diagnostics, with a gutter.
 struct EditorTextView: NSViewRepresentable {
@@ -124,12 +151,12 @@ struct EditorTextView: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(model: model, document: document) }
 
-    func makeNSView(context: Context) -> NSScrollView {
+    func makeNSView(context: Context) -> EditorContainer {
         Self.build(model: model, document: document, coordinator: context.coordinator)
     }
 
     /// The scroll view with text view and gutter; also what the headless render check hosts.
-    static func build(model: EditorModel, document: EditorDocument, coordinator: Coordinator) -> NSScrollView {
+    static func build(model: EditorModel, document: EditorDocument, coordinator: Coordinator) -> EditorContainer {
         let tv = SynodTextView(usingTextLayoutManager: true)
         tv.textContentStorage?.textStorage = document.storage
         tv.delegate = coordinator
@@ -169,26 +196,25 @@ struct EditorTextView: NSViewRepresentable {
         scroll.drawsBackground = true
         scroll.backgroundColor = EditorPalette.paper.color
         scroll.documentView = tv
-        let gutter = EditorGutter(scrollView: scroll)
+        let gutter = EditorGutter(client: tv)
         gutter.document = document
-        scroll.verticalRulerView = gutter
-        scroll.hasVerticalRuler = true
-        scroll.rulersVisible = true
         scroll.contentView.postsBoundsChangedNotifications = true
 
+        // The gutter sits beside the scroll view, never over it: the text starts at its right edge.
+        let container = EditorContainer(scroll: scroll, gutter: gutter)
         coordinator.attach(textView: tv, gutter: gutter, scroll: scroll)
         document.scheduleHighlight()
-        return scroll
+        return container
     }
 
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let tv = scroll.documentView as? SynodTextView else { return }
+    func updateNSView(_ container: EditorContainer, context: Context) {
+        guard let tv = container.scroll.documentView as? SynodTextView else { return }
         let editable = !document.isReadOnly
         if tv.isEditable != editable { tv.isEditable = editable }
         context.coordinator.handleReveal(model.reveal)
     }
 
-    static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
+    static func dismantleNSView(_ container: EditorContainer, coordinator: Coordinator) {
         coordinator.detach()
     }
 

@@ -226,16 +226,19 @@ enum HeadlessEditor {
                     try? await Task.sleep(for: .milliseconds(400))
                     win.contentView?.layoutSubtreeIfNeeded()
                     guard let tv = findTextView(in: win.contentView!) else { fail("\(name): no text view"); continue }
-                    if let sc = tv.enclosingScrollView { trace("\(name) scroll \(sc.frame) content \(sc.contentView.frame) tv \(tv.frame) ruler \(String(describing: sc.verticalRulerView?.frame)) thick \(String(describing: sc.verticalRulerView?.ruleThickness))") }
                     tv.layoutSubtreeIfNeeded()
                     win.displayIfNeeded()
-                    tv.enclosingScrollView?.tile()
                     // The whole view, gutter and all, as the window composes it: the text must
                     // survive what is drawn over it. Only the area right of the gutter counts.
                     guard let whole = win.contentView, let rep = whole.bitmapImageRepForCachingDisplay(in: whole.bounds) else { fail("\(name): no bitmap"); continue }
                     whole.cacheDisplay(in: whole.bounds, to: rep)
                     let scale = CGFloat(rep.pixelsWide) / whole.bounds.width
-                    let firstColumn = Int((tv.enclosingScrollView?.verticalRulerView?.ruleThickness ?? 46) * scale) + Int(8 * scale)
+                    // The gutter sits beside the text: the text view starts at its right edge.
+                    guard let container = tv.enclosingScrollView?.superview as? EditorContainer else { fail("\(name): no editor container"); continue }
+                    let gutterRight = container.convert(NSPoint(x: EditorGutter.thickness, y: 0), to: whole).x
+                    let textLeft = tv.convert(NSPoint.zero, to: whole).x
+                    if textLeft < gutterRight - 0.5 { fail("\(name): the text view starts at \(textLeft), under the gutter (right edge \(gutterRight))") }
+                    let firstColumn = Int(gutterRight * scale)
                     let bg = EditorPalette.paper.color(dark: dark).usingColorSpace(.sRGB)!
                     var glyph = 0
                     var buckets = [UInt32: Int]()
@@ -250,6 +253,32 @@ enum HeadlessEditor {
                             }
                         }
                     }
+                    // Line 1 and the lines after it: their leftmost glyph pixel is right of the gutter by
+                    // the margin, and sits where the first character is (at most 2 character widths in).
+                    var fragments: [CGRect] = []
+                    tv.textLayoutManager?.enumerateTextLayoutFragments(from: tv.textLayoutManager?.documentRange.location, options: [.ensuresLayout]) { f in
+                        fragments.append(f.layoutFragmentFrame)
+                        return fragments.count < 6
+                    }
+                    let margin: CGFloat = 2
+                    var leftmost = CGFloat.greatestFiniteMagnitude
+                    for f in fragments.prefix(6) {
+                        let r = tv.convert(CGRect(x: 0, y: f.minY + tv.textContainerOrigin.y, width: tv.bounds.width, height: f.height), to: whole)
+                        let top = whole.isFlipped ? r.minY : whole.bounds.height - r.maxY
+                        let y0 = max(0, Int(top * scale)), y1 = min(rep.pixelsHigh, Int((top + r.height) * scale))
+                        var rowLeft = Int.max
+                        for y in y0..<max(y0, y1) {
+                            for x in firstColumn..<min(rep.pixelsWide, firstColumn + Int(80 * scale)) {
+                                guard let px = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                                if abs(px.redComponent - bg.redComponent) + abs(px.greenComponent - bg.greenComponent) + abs(px.blueComponent - bg.blueComponent) > 0.5 { rowLeft = min(rowLeft, x); break }
+                            }
+                        }
+                        if rowLeft != Int.max { leftmost = min(leftmost, CGFloat(rowLeft) / scale) }
+                    }
+                    c.metrics["\(name)LeftGlyphX"] = Double(leftmost == .greatestFiniteMagnitude ? -1 : leftmost - gutterRight)
+                    if leftmost == .greatestFiniteMagnitude { fail("\(name): no glyph pixels in the first lines") }
+                    else if leftmost < gutterRight + margin { fail("\(name): the first glyph starts \(leftmost - gutterRight) pt right of the gutter, under it") }
+                    else if leftmost > gutterRight + 24 { fail("\(name): the first characters are missing (first glyph \(leftmost - gutterRight) pt right of the gutter)") }
                     // Colors that carry a real share of the glyph pixels, not antialiasing blends.
                     let distinct = buckets.values.filter { $0 >= max(20, glyph / 200) }.count
                     c.metrics["\(name)GlyphPixels"] = Double(glyph)
