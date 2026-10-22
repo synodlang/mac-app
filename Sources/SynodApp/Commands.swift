@@ -25,6 +25,7 @@ func chooseWorkspace() -> URL? {
 struct AppCommands: Commands {
     @FocusedValue(\.workspaceModel) private var model
     @Environment(\.openWindow) private var openWindow
+    private let env = AppEnvironment.shared
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -49,6 +50,12 @@ struct AppCommands: Commands {
             Button("Go to Definition") { model?.editor.goToDefinitionAtCaret() }
                 .keyboardShortcut(.downArrow, modifiers: [.command])
                 .disabled(model?.editor.current == nil)
+            Button("Show Completions") { model?.editor.triggerCompletion?() }
+                .keyboardShortcut(.space, modifiers: [.control])
+                .disabled(model?.editor.current == nil)
+            Button("Ask Claude") { model?.claude.focus() }
+                .keyboardShortcut("k")
+                .disabled(model == nil || model?.isReadOnly == true || !env.promptBarEnabled)
             Divider()
             Button(model?.editorVisible == false ? "Show Editor" : "Hide Editor") { model?.editorVisible.toggle() }
                 .keyboardShortcut("e", modifiers: [.command, .option])

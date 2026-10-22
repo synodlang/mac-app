@@ -167,6 +167,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        EditorMCPHub.shared.terminate()
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let dirty = WorkspaceRegistry.models.filter { !$0.editor.dirtyDocuments.isEmpty }
         guard !dirty.isEmpty else { return .terminateNow }

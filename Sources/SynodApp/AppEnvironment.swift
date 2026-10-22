@@ -25,6 +25,31 @@ enum AppTools {
     }
 }
 
+/// Where the editor bridge (`synod-editor-mcp`) and the fake `claude` of the checks are.
+enum HelperTools {
+    /// `Contents/Helpers/synod-editor-mcp` in the app bundle, else next to the running executable
+    /// (a `swift build` folder), else `SYNOD_EDITOR_BRIDGE`.
+    static func editorBridge() -> URL? { helper("synod-editor-mcp", override: "SYNOD_EDITOR_BRIDGE") }
+
+    static func helper(_ name: String, override: String? = nil) -> URL? {
+        let fm = FileManager.default
+        var candidates: [URL] = []
+        if let o = override, let p = ProcessInfo.processInfo.environment[o], !p.isEmpty { candidates.append(URL(fileURLWithPath: p)) }
+        candidates.append(Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/\(name)"))
+        if let exe = Bundle.main.executableURL { candidates.append(exe.deletingLastPathComponent().appendingPathComponent(name)) }
+        return candidates.first { fm.isExecutableFile(atPath: $0.path) }
+    }
+
+    /// The agent-skills folder: `SYNOD_AGENT_SKILLS`, else the bundled or `.deps` one.
+    static func agentSkills(tools: ToolPaths?) -> URL? {
+        if let p = ProcessInfo.processInfo.environment["SYNOD_AGENT_SKILLS"], !p.isEmpty {
+            let url = URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
+            if FileManager.default.fileExists(atPath: url.appendingPathComponent("skills/synod/SKILL.md").path) { return url }
+        }
+        return tools?.agentSkills
+    }
+}
+
 /// App-wide state: the compiler, its version check, the recent workspaces.
 @MainActor @Observable
 final class AppEnvironment {
@@ -32,6 +57,9 @@ final class AppEnvironment {
 
     static let overrideKey = "synodPathOverride"
     static let recentsKey = "recentWorkspaces"
+    static let promptBarKey = "promptBarEnabled"
+    static let claudePathKey = "claudePath"
+    static let claudeModelKey = "claudeModel"
 
     private(set) var tools: ToolPaths?
     private(set) var runner: SynodRunner?
@@ -39,6 +67,24 @@ final class AppEnvironment {
     private(set) var versionProblem: String?
     private(set) var recents: [String]
     private var probed = false
+
+    /// Settings › Claude (decision 96). The prompt bar is off until the user opts in.
+    var promptBarEnabled: Bool {
+        didSet { UserDefaults.standard.set(promptBarEnabled, forKey: Self.promptBarKey) }
+    }
+    var claudePath: String {
+        didSet {
+            UserDefaults.standard.set(claudePath, forKey: Self.claudePathKey)
+            probeClaude()
+        }
+    }
+    /// Empty means Claude Code's own default model.
+    var claudeModel: String {
+        didSet { UserDefaults.standard.set(claudeModel, forKey: Self.claudeModelKey) }
+    }
+    private(set) var claudeURL: URL?
+    private(set) var claudeVersion: String?
+    private(set) var claudeProbed = false
 
     var synodPathOverride: String {
         didSet {
@@ -50,7 +96,11 @@ final class AppEnvironment {
     private init() {
         synodPathOverride = UserDefaults.standard.string(forKey: Self.overrideKey) ?? ""
         recents = UserDefaults.standard.stringArray(forKey: Self.recentsKey) ?? []
+        promptBarEnabled = UserDefaults.standard.bool(forKey: Self.promptBarKey)
+        claudePath = UserDefaults.standard.string(forKey: Self.claudePathKey) ?? ""
+        claudeModel = UserDefaults.standard.string(forKey: Self.claudeModelKey) ?? ClaudeInvocation.defaultModel
         configureTools()
+        claudeURL = ClaudeLocator.resolve(setting: claudePath)
     }
 
     private func configureTools() {
@@ -89,6 +139,41 @@ final class AppEnvironment {
     }
 
     var examplesURL: URL? { tools?.examples }
+
+    /// Completion needs `synod-doc/1`; until the version is known it is on.
+    var completionEnabled: Bool { version?.supportsDoc ?? true }
+
+    var skillsURL: URL? { HelperTools.agentSkills(tools: tools) }
+
+    /// Finds `claude` (the path setting, else the usual places) and asks it for its version.
+    func probeClaude() {
+        claudeURL = ClaudeLocator.resolve(setting: claudePath)
+        claudeVersion = nil
+        claudeProbed = false
+        guard let claude = claudeURL, let synod = tools?.synod else { claudeProbed = true; return }
+        Task {
+            let v = await ClaudeLocator.version(of: claude, synod: synod)
+            if claudeURL == claude {
+                claudeVersion = v
+                claudeProbed = true
+            }
+        }
+    }
+
+    func probeClaudeIfNeeded() {
+        if !claudeProbed && claudeVersion == nil { probeClaude() }
+    }
+
+    /// Why the prompt bar cannot start a request, or nil.
+    var promptBarProblem: String? {
+        if claudeURL == nil {
+            return "Claude Code was not found. Install it from https://claude.com/product/claude-code, then set its path in Settings > Claude."
+        }
+        if skillsURL == nil { return "The bundled agent skills were not found." }
+        if tools?.synod == nil || runner == nil { return "The synod compiler was not found." }
+        if HelperTools.editorBridge() == nil { return "The editor bridge (synod-editor-mcp) was not found." }
+        return nil
+    }
 
     func addRecent(_ url: URL) {
         let p = url.standardizedFileURL.path

@@ -21,6 +21,7 @@ struct WorkspaceWindow: View {
         .frame(minWidth: 900, minHeight: 560)
         .task(id: url) {
             env.probeIfNeeded()
+            env.probeClaudeIfNeeded()
             do {
                 model = WorkspaceModel(workspace: try Workspace.open(url), env: env)
             } catch {
@@ -60,6 +61,9 @@ struct WorkspaceView: View {
                     }
                 } else {
                     StageColumn(model: model)
+                }
+                if env.promptBarEnabled {
+                    PromptBar(model: model)
                 }
             }
         }
@@ -116,9 +120,18 @@ struct BannerView: View {
 
 struct WorkspaceToolbar: ToolbarContent {
     @Bindable var model: WorkspaceModel
+    private let hub = EditorMCPHub.shared
 
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            if hub.externalConnected(to: model) {
+                Label("Claude (Terminal) connected", systemImage: "terminal")
+                    .font(.callout)
+                    .foregroundStyle(.tint)
+                    .help("A Claude Code session in Terminal can read and edit this window's files")
+                Button("Disconnect") { Task { await hub.disconnectExternal() } }
+                    .help("Close the connection and invalidate the copied MCP config")
+            }
             Button { model.run(.manual) } label: { Label("Run", systemImage: "arrow.clockwise") }
                 .help("Run again (⌘R)")
                 .disabled(model.activeProgram == nil)

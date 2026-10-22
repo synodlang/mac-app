@@ -47,6 +47,10 @@ final class WorkspaceModel {
     let env: AppEnvironment
     let coordinator = RunCoordinator()
     let editor: EditorModel
+    /// Phrase completion of the editor (decision 92).
+    let completion: CompletionController
+    /// The prompt bar (decision 96).
+    let claude = ClaudeModel()
 
     private(set) var scan: Workspace.Scan
     private(set) var examplesScan: Workspace.Scan?
@@ -115,6 +119,7 @@ final class WorkspaceModel {
         examplesScan = examples?.scan()
         editor = EditorModel(workspace: workspace, examples: examples, ownReadOnly: isReadOnly,
                              runner: { [env] in env.runner })
+        completion = CompletionController(editor: editor, isEnabled: { [env] in env.completionEnabled })
 
         do {
             let s = try StageController(assets: WebAssets.locate())
@@ -131,6 +136,11 @@ final class WorkspaceModel {
             try await self?.applyToStage(run, seek: seek, keepTime: keepTime)
         }
         breakIt.host = self
+        editor.completion = completion
+        editor.didCheck = { [weak completion] doc, report in completion?.checked(doc, report: report) }
+        claude.host = self
+        claude.config = { [weak self] in self?.claudeConfig() }
+        claude.isEnabled = { [env] in env.promptBarEnabled }
         WorkspaceRegistry.add(self)
         startEventLoop()
         startWatching()
@@ -150,6 +160,8 @@ final class WorkspaceModel {
 
     func stop() {
         WorkspaceRegistry.remove(self)
+        claude.shutdown()
+        completion.stop()
         exitCompare()
         eventTask?.cancel()
         watchTask?.cancel()
@@ -179,7 +191,21 @@ final class WorkspaceModel {
         return ws.root.path + "|" + p.relPath
     }
 
-    func select(_ item: Item) {
+    /// Refreshes the program and package lists (after Claude changed files).
+    func rescan() {
+        scan = workspace.scan()
+        examplesScan = examples?.scan()
+    }
+
+    /// What a prompt-bar request needs, from Settings; nil when something is missing.
+    func claudeConfig() -> ClaudeModel.Config? {
+        guard env.promptBarProblem == nil, let claude = env.claudeURL, let skills = env.skillsURL,
+              let synod = env.tools?.synod, let bridge = HelperTools.editorBridge() else { return nil }
+        let model = env.claudeModel.trimmingCharacters(in: .whitespaces)
+        return ClaudeModel.Config(claude: claude, model: model.isEmpty ? nil : model, skills: skills, synod: synod, bridge: bridge)
+    }
+
+    func select(_ item: Item, run runIt: Bool = true) {
         exitCompare()
         breakIt.reset()
         selectedMessage = nil
@@ -192,7 +218,7 @@ final class WorkspaceModel {
                 source = SourceTarget(file: relFile(p.relPath, p.mainFile), origin: item.origin)
                 try? editor.show(file: relFile(p.relPath, p.mainFile), origin: item.origin)
                 editor.programChanged()
-                run(.selection)
+                if runIt { run(.selection) }
             }
         case .package:
             let list = (item.origin == .own ? scan : examplesScan ?? scan).packages
