@@ -21,7 +21,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-for f in .deps/synod/synod .deps/player/synod-player.iife.js .deps/examples; do
+for f in .deps/synod/synod .deps/player/synod-player.iife.js .deps/examples .deps/agent-skills/skills/synod/SKILL.md; do
   [ -e "$f" ] || { echo "bundle: missing $f; run scripts/fetch-deps.sh" >&2; exit 1; }
 done
 
@@ -38,6 +38,8 @@ if ! swift build -c "$config" ${archflags[@]+"${archflags[@]}"}; then
 fi
 bindir="$(swift build -c "$config" ${archflags[@]+"${archflags[@]}"} --show-bin-path)"
 exe="$bindir/Synod"
+bridge="$bindir/synod-editor-mcp"
+[ -f "$bridge" ] || { echo "bundle: cannot find $bridge" >&2; exit 1; }
 [ -f "$exe" ] || { echo "bundle: cannot find $exe" >&2; exit 1; }
 
 app="build/Synod.app"
@@ -46,6 +48,8 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers" "$app/Contents/Resources/
 
 cp "$exe" "$app/Contents/MacOS/Synod"
 cp .deps/synod/synod "$app/Contents/Helpers/synod"
+cp "$bridge" "$app/Contents/Helpers/synod-editor-mcp"
+chmod +x "$app/Contents/Helpers/synod-editor-mcp"
 cp .deps/player/synod-player.iife.js "$app/Contents/Resources/player/synod-player.iife.js"
 for f in stage.html stage.js export.html export.js compare.html compare.js; do
   if [ -f "Web/$f" ]; then
@@ -58,17 +62,26 @@ cp Support/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 cp -R .deps/examples "$app/Contents/Resources/examples"
 rm -rf "$app/Contents/Resources/examples/.commit" "$app/Contents/Resources/examples/.github" "$app/Contents/Resources/examples/.gitignore"
 
+cp -R .deps/agent-skills "$app/Contents/Resources/agent-skills"
+rm -rf "$app/Contents/Resources/agent-skills/.git" "$app/Contents/Resources/agent-skills/.github" "$app/Contents/Resources/agent-skills/.version" \
+  "$app/Contents/Resources/agent-skills/tools" "$app/Contents/Resources/agent-skills/go.mod"
+[ -f "$app/Contents/Resources/agent-skills/skills/synod/SKILL.md" ] || { echo "bundle: agent-skills is incomplete" >&2; exit 1; }
+
 cat > "$app/Contents/Resources/NOTICE-versions.txt" <<NOTICE
 Synod $version
 synod (compiler) $SYNOD_VERSION
 player $PLAYER_VERSION
 examples $EXAMPLES_VERSION ($EXAMPLES_COMMIT)
+agent-skills $AGENT_SKILLS_VERSION
 NOTICE
 
 build="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
 sed -e "s/@VERSION@/$version/" -e "s/@BUILD@/$build/" Support/Info.plist.in > "$app/Contents/Info.plist"
 plutil -lint "$app/Contents/Info.plist" >/dev/null
 
+# Sign the helpers first (ad-hoc), then the bundle; --deep --strict must still verify.
+codesign --force -s - "$app/Contents/Helpers/synod-editor-mcp"
 codesign --force --deep -s - "$app"
+codesign --verify --strict "$app/Contents/Helpers/synod-editor-mcp"
 codesign --verify --deep --strict "$app"
 echo "bundle: built $app ($version, build $build)"

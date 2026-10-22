@@ -3,22 +3,25 @@
 #   ../compiler  -> .deps/synod/synod            (go build ./cmd/synod, the host architecture)
 #   ../player    -> .deps/player/synod-player.iife.js  (esbuild into .deps; player/dist is not touched)
 #   ../examples  -> .deps/examples               (a copy without .git)
+#   ../agent-skills -> .deps/agent-skills         (a copy without .git, when the checkout exists)
 # and writes .deps/.local. fetch-deps.sh refuses to run over that marker unless given --force.
-#   scripts/local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--skip-player]
+#   scripts/local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--agent-skills <dir>] [--skip-player]
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compiler="$root/../compiler"
 player="$root/../player"
 examples="$root/../examples"
+skills="$root/../agent-skills"
 skip_player=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --compiler) compiler="$2"; shift 2 ;;
     --player) player="$2"; shift 2 ;;
     --examples) examples="$2"; shift 2 ;;
+    --agent-skills) skills="$2"; shift 2 ;;
     --skip-player) skip_player=1; shift ;;
-    *) echo "usage: local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--skip-player]" >&2; exit 2 ;;
+    *) echo "usage: local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--agent-skills <dir>] [--skip-player]" >&2; exit 2 ;;
   esac
 done
 
@@ -49,6 +52,16 @@ rm -rf "$deps/examples"
 mkdir -p "$deps/examples"
 (cd "$examples" && tar --exclude=.git -cf - .) | (cd "$deps/examples" && tar -xf -)
 echo "local-deps: examples copied from $examples"
+
+# agent-skills
+if [[ -f "$skills/skills/synod/SKILL.md" ]]; then
+  rm -rf "$deps/agent-skills"
+  mkdir -p "$deps/agent-skills"
+  (cd "$skills" && tar --exclude=.git -cf - .) | (cd "$deps/agent-skills" && tar -xf -)
+  echo "local-deps: agent-skills copied from $skills"
+else
+  echo "local-deps: no agent-skills at $skills; skipped" >&2
+fi
 
 echo "compiler $(git -C "$compiler" rev-parse --short HEAD 2>/dev/null || echo unknown)" > "$deps/.local"
 echo "local-deps: ok (.deps/.local written; scripts/fetch-deps.sh --force restores the pinned releases)"

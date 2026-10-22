@@ -22,7 +22,7 @@ case "${1:-}" in
 esac
 if [ -f "$deps/.local" ]; then
   [ "$force" = 1 ] || die ".deps holds local builds (.deps/.local); run with --force to replace them with the pinned releases"
-  rm -rf "$deps/synod" "$deps/player" "$deps/examples" "$deps/.local"
+  rm -rf "$deps/synod" "$deps/player" "$deps/examples" "$deps/agent-skills" "$deps/.local"
   echo "fetch-deps: removed local builds"
 fi
 mkdir -p "$deps"
@@ -92,5 +92,21 @@ else
   echo "$EXAMPLES_COMMIT" > "$deps/examples/.commit"
   rm -rf "$work"
   echo "fetch-deps: examples $EXAMPLES_COMMIT"
+fi
+# agent-skills
+skills_archive="agent-skills-$AGENT_SKILLS_VERSION.tar.gz"
+download agent-skills "$AGENT_SKILLS_VERSION" "$skills_archive" "$AGENT_SKILLS_SHA256"
+if [ -f "$deps/agent-skills/.version" ] && [ "$(cat "$deps/agent-skills/.version")" = "$AGENT_SKILLS_VERSION $AGENT_SKILLS_SHA256" ] \
+  && [ -f "$deps/agent-skills/skills/synod/SKILL.md" ]; then
+  echo "fetch-deps: agent-skills $AGENT_SKILLS_VERSION (cached)"
+else
+  tmp="$deps/agent-skills.tmp"
+  rm -rf "$tmp" "$deps/agent-skills"
+  mkdir -p "$tmp"
+  tar -xzf "$deps/dl/agent-skills-$AGENT_SKILLS_VERSION/$skills_archive" -C "$tmp" --strip-components 1
+  [ -f "$tmp/skills/synod/SKILL.md" ] || die "agent-skills archive has no skills/synod/SKILL.md"
+  echo "$AGENT_SKILLS_VERSION $AGENT_SKILLS_SHA256" > "$tmp/.version"
+  mv "$tmp" "$deps/agent-skills"
+  echo "fetch-deps: agent-skills $AGENT_SKILLS_VERSION"
 fi
 echo "fetch-deps: ok"
