@@ -1,0 +1,485 @@
+{
+ "format": "synod-doc/1",
+ "diagnostics": [],
+ "scope": {
+  "file": "twopc/twopc.synod",
+  "package": "twopc",
+  "imports": [
+   {
+    "path": "std/net",
+    "qualifier": "net"
+   },
+   {
+    "path": "std/time",
+    "qualifier": "time"
+   },
+   {
+    "path": "github.com/synodlang/examples/raft",
+    "qualifier": "r"
+   }
+  ],
+  "future": 1
+ },
+ "packages": [
+  {
+   "path": "example.com/demo/twopc",
+   "name": "twopc",
+   "qualifier": "twopc",
+   "title": "",
+   "std": false,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "Commit [t: text]",
+     "items": [
+      {
+       "word": "Commit"
+      },
+      {
+       "hole": "t",
+       "type": "text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "Commit a transaction",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "Collect [xs: list of node] otherwise [b]",
+     "items": [
+      {
+       "word": "Collect"
+      },
+      {
+       "hole": "xs",
+       "type": "list of node"
+      },
+      {
+       "word": "otherwise"
+      },
+      {
+       "hole": "b",
+       "type": ""
+      }
+     ],
+     "blocks": [
+      {
+       "word": "otherwise",
+       "hole": "b"
+      }
+     ],
+     "receiver": null,
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "Helper",
+     "items": [
+      {
+       "word": "Helper"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": false,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "[n: Node] Prepare [round: number]",
+     "items": [
+      {
+       "hole": "n",
+       "type": "Node"
+      },
+      {
+       "word": "Prepare"
+      },
+      {
+       "hole": "round",
+       "type": "number"
+      }
+     ],
+     "blocks": [],
+     "receiver": {
+      "name": "n",
+      "type": "Node"
+     },
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "Ask a node to prepare",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "[n: Node] secret",
+     "items": [
+      {
+       "hole": "n",
+       "type": "Node"
+      },
+      {
+       "word": "secret"
+      }
+     ],
+     "blocks": [],
+     "receiver": {
+      "name": "n",
+      "type": "Node"
+     },
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": false,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "when [n: Node] ready",
+     "items": [
+      {
+       "word": "when"
+      },
+      {
+       "hole": "n",
+       "type": "Node"
+      },
+      {
+       "word": "ready"
+      }
+     ],
+     "blocks": [],
+     "receiver": {
+      "name": "n",
+      "type": "Node"
+     },
+     "gives": "—",
+     "contexts": null,
+     "kind": "node-event",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    }
+   ],
+   "records": [],
+   "node": {
+    "doc": "",
+    "fields": [
+     {
+      "name": "State",
+      "type": "text",
+      "exported": true
+     },
+     {
+      "name": "votes",
+      "type": "number",
+      "exported": false
+     }
+    ]
+   }
+  },
+  {
+   "path": "std/net",
+   "name": "net",
+   "qualifier": "net",
+   "title": "the simulated network",
+   "std": true,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "net.Send [m: msg] from [a: node] to [b: node]",
+     "items": [
+      {
+       "word": "net.Send"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "b",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "node"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Send through the network from `a`, which must be the receiver",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Id [m: msg]",
+     "items": [
+      {
+       "word": "net.Id"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "number",
+     "contexts": [
+      "any"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "The message id of the net fact that bound `m`",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Hidden",
+     "items": [
+      {
+       "word": "net.Hidden"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": true,
+     "exported": false,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    }
+   ],
+   "records": [],
+   "node": null
+  },
+  {
+   "path": "std/time",
+   "name": "time",
+   "qualifier": "time",
+   "title": "time and timers",
+   "std": true,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "time.Every [d: time]",
+     "items": [
+      {
+       "word": "time.Every"
+      },
+      {
+       "hole": "d",
+       "type": "time"
+      }
+     ],
+     "blocks": [
+      {
+       "word": "",
+       "hole": "body"
+      }
+     ],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "node",
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Run a block every `d`",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    }
+   ],
+   "records": [],
+   "node": null
+  },
+  {
+   "path": "github.com/synodlang/examples/raft",
+   "name": "raft",
+   "qualifier": "r",
+   "title": "",
+   "std": false,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "r.Elect [t: number]",
+     "items": [
+      {
+       "word": "r.Elect"
+      },
+      {
+       "hole": "t",
+       "type": "number"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "Start an election",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "[n: r.Node] r.Campaign",
+     "items": [
+      {
+       "hole": "n",
+       "type": "r.Node"
+      },
+      {
+       "word": "r.Campaign"
+      }
+     ],
+     "blocks": [],
+     "receiver": {
+      "name": "n",
+      "type": "r.Node"
+     },
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "[n: r.Node] r.Vote [for: node]",
+     "items": [
+      {
+       "hole": "n",
+       "type": "r.Node"
+      },
+      {
+       "word": "r.Vote"
+      },
+      {
+       "hole": "for",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": {
+      "name": "n",
+      "type": "r.Node"
+     },
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "x.synod",
+      "line": 3,
+      "col": 1
+     }
+    }
+   ],
+   "records": [],
+   "node": {
+    "doc": "",
+    "fields": [
+     {
+      "name": "Term",
+      "type": "number",
+      "exported": true
+     },
+     {
+      "name": "log",
+      "type": "list of text",
+      "exported": false
+     }
+    ]
+   }
+  }
+ ],
+ "extra": {
+  "a": 1
+ }
+}

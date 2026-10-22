@@ -11,6 +11,16 @@ public struct SynodVersion: Sendable, Equatable {
     /// The formats this app reads.
     public static let requiredFormats = ["synod-trace/1", "synod-scene/1", "synod-check/1"]
 
+    /// The format completion reads; without it completion is off (it is not required).
+    public static let docFormat = "synod-doc/1"
+
+    public var supportsDoc: Bool { formats.contains(Self.docFormat) }
+
+    /// The note for Settings when completion is off, else nil.
+    public var completionNote: String? {
+        supportsDoc ? nil : "Completion is off: this compiler does not write \(Self.docFormat)."
+    }
+
     public static func parse(_ output: String) -> SynodVersion {
         var language = ""
         var compiler = ""

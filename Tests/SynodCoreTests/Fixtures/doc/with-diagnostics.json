@@ -1,0 +1,20 @@
+{
+ "format": "synod-doc/1",
+ "diagnostics": [
+  {
+   "file": "twopc/twopc.synod",
+   "line": 4,
+   "col": 3,
+   "end": {
+    "line": 4,
+    "col": 8
+   },
+   "severity": "error",
+   "code": "unknown-phrase",
+   "message": "no phrase matches",
+   "label": "here"
+  }
+ ],
+ "scope": null,
+ "packages": []
+}
