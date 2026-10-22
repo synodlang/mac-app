@@ -1,0 +1,586 @@
+{
+  "tools": [
+    {
+      "name": "list_files",
+      "description": "List the module's Synod files with their editor state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "open",
+                "dirty",
+                "readOnly",
+                "version"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "open": {
+                  "type": "boolean"
+                },
+                "dirty": {
+                  "type": "boolean"
+                },
+                "readOnly": {
+                  "type": "boolean"
+                },
+                "version": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "read_buffer",
+      "description": "Read a file as the editor holds it, unsaved changes included.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "startLine": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "endLine": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "dirty",
+          "readOnly",
+          "lineCount",
+          "startLine",
+          "endLine",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "dirty": {
+            "type": "boolean"
+          },
+          "readOnly": {
+            "type": "boolean"
+          },
+          "lineCount": {
+            "type": "integer"
+          },
+          "startLine": {
+            "type": "integer"
+          },
+          "endLine": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_diagnostics",
+      "description": "Diagnostics of the module including unsaved buffers; fresh runs a check now.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "fresh": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "stale",
+          "diagnostics"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "stale": {
+            "type": "boolean"
+          },
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "line",
+                "col",
+                "endLine",
+                "endCol",
+                "severity",
+                "code",
+                "message",
+                "hint"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "col": {
+                  "type": "integer"
+                },
+                "endLine": {
+                  "type": "integer"
+                },
+                "endCol": {
+                  "type": "integer"
+                },
+                "severity": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "hint": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_selection",
+      "description": "The file, caret and selections the user has in the editor.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "caret",
+          "selections"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "caret": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "line",
+              "col"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "line": {
+                "type": "integer"
+              },
+              "col": {
+                "type": "integer"
+              }
+            }
+          },
+          "selections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "line",
+                "col",
+                "endLine",
+                "endCol",
+                "text"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "line": {
+                  "type": "integer"
+                },
+                "col": {
+                  "type": "integer"
+                },
+                "endLine": {
+                  "type": "integer"
+                },
+                "endCol": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "apply_edits",
+      "description": "Apply non-overlapping edits to one buffer as one undoable change; the file stays unsaved.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "edits"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "edits": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1000,
+            "items": {
+              "type": "object",
+              "required": [
+                "line",
+                "col",
+                "endLine",
+                "endCol",
+                "text"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "line": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "col": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "endLine": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "endCol": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "dirty"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "dirty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "replace_buffer",
+      "description": "Replace a buffer's whole text as one undoable change; the file stays unsaved.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1048576
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "dirty"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "dirty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "create_file",
+      "description": "Create a new .synod file on disk with this text, formatted, and open it.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "\\.synod$"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1048576
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "formatted"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "formatted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "save_files",
+      "description": "Save buffers exactly as the user's Save does (atomic write, then synod fmt).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "paths"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "saved",
+          "failed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "saved": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "version",
+                "formatted"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer"
+                },
+                "formatted": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "message"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false
+      }
+    },
+    {
+      "name": "open_file",
+      "description": "Show a file in the editor, optionally at a position.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "col": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    }
+  ]
+}
