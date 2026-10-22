@@ -6,10 +6,13 @@ public struct ToolPaths: Sendable, Equatable {
     public var synod: URL
     /// The folder of bundled example programs (a module), if present.
     public var examples: URL?
+    /// The agent-skills folder (it holds `skills/synod/SKILL.md`), if present.
+    public var agentSkills: URL?
 
-    public init(synod: URL, examples: URL? = nil) {
+    public init(synod: URL, examples: URL? = nil, agentSkills: URL? = nil) {
         self.synod = synod
         self.examples = examples
+        self.agentSkills = agentSkills
     }
 
     /// Resolves the tools from a base folder: an app bundle's `Contents/Resources` (binary in
@@ -33,7 +36,11 @@ public struct ToolPaths: Sendable, Equatable {
             }
         }
         let ex = baseURL.appendingPathComponent("examples").standardizedFileURL
-        self.init(synod: found ?? candidates[0], examples: fm.fileExists(atPath: ex.path) ? ex : nil)
+        // `Resources/agent-skills` in the bundle, `.deps/agent-skills` in the repo.
+        let skills = baseURL.appendingPathComponent("agent-skills").standardizedFileURL
+        let hasSkill = fm.fileExists(atPath: skills.appendingPathComponent("skills/synod/SKILL.md").path)
+        self.init(synod: found ?? candidates[0], examples: fm.fileExists(atPath: ex.path) ? ex : nil,
+                  agentSkills: hasSkill ? skills : nil)
     }
 
     /// The executable this process runs: `Bundle.main.executableURL` and `arguments[0]`.

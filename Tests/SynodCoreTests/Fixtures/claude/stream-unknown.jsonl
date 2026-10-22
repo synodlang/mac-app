@@ -1,0 +1,5 @@
+{"type":"system","subtype":"hook_started","session_id":"x"}
+{"type":"stream_event","event":{"type":"content_block_delta"}}
+this is not json
+{"type":"assistant","message":{"content":[{"type":"thinking","thinking":"..."},{"type":"text","text":"Hello"}]}}
+{"type":"result","subtype":"success","result":"ok"}
