@@ -90,6 +90,34 @@ func scanRealExamples() throws {
     #expect(tools.overriding(synodPath: "/opt/synod").synod.path == "/opt/synod")
 }
 
+/// On a case-insensitive filesystem `synod` and the app's own `Synod` are one file; tool resolution
+/// must never return the running executable.
+@Test func toolPathsNeverReturnTheRunningExecutable() throws {
+    let dir = try makeTempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let fm = FileManager.default
+    let exe = dir.appendingPathComponent("Synod")
+    try "#!/bin/sh\n".write(to: exe, atomically: true, encoding: .utf8)
+    try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: exe.path)
+    // The binary named like the compiler (a different spelling, or a hard link to it).
+    let alias = dir.appendingPathComponent("synod")
+    let caseInsensitive = fm.fileExists(atPath: alias.path)
+    if !caseInsensitive { try fm.linkItem(at: exe, to: alias) }
+    #expect(ToolPaths.sameFile(exe, alias))
+    let tools = ToolPaths(baseURL: dir, avoiding: [exe])
+    #expect(!ToolPaths.sameFile(tools.synod, exe))
+    #expect(!tools.isUsable)
+    // With a real compiler in .deps style layout next to it, that one is found.
+    let real = dir.appendingPathComponent("synod-real/synod")
+    try fm.createDirectory(at: real.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try "#!/bin/sh\n".write(to: real, atomically: true, encoding: .utf8)
+    try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: real.path)
+    let other = dir.appendingPathComponent("deps")
+    try fm.createDirectory(at: other.appendingPathComponent("synod"), withIntermediateDirectories: true)
+    try fm.copyItem(at: real, to: other.appendingPathComponent("synod/synod"))
+    #expect(ToolPaths(baseURL: other, avoiding: [exe]).isUsable)
+}
+
 // MARK: SynodRunner
 
 @Test func runnerReturnsExitCodesAndOutput() async throws {

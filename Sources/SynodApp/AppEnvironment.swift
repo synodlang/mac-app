@@ -7,7 +7,11 @@ enum AppTools {
     /// The bundle's tools when usable, else the repository's `.deps`; a settings path replaces the compiler.
     static func resolve(override: String? = nil) -> ToolPaths? {
         var base: ToolPaths?
-        if let b = ToolPaths.bundled(), b.isUsable {
+        // A run from the build folder (not an .app) uses the repository's pinned tools first.
+        let inBundle = Bundle.main.bundlePath.hasSuffix(".app")
+        if !inBundle, let r = ToolPaths.repoDeps() {
+            base = r
+        } else if let b = ToolPaths.bundled(), b.isUsable {
             base = b
         } else {
             base = ToolPaths.repoDeps()
