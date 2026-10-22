@@ -16,6 +16,7 @@ enum StageCheck {
         var distinctColorsAfterSeek = 0
         var markerAt = 0.0
         var stoppedAt = 0.0
+        var resumeWaitMs = 0.0
         var question: String?
     }
 
@@ -130,7 +131,13 @@ enum StageCheck {
             if model.predictQuestion != nil {
                 model.predictAnswer = "check"
                 model.continuePredict()
-                try await Task.sleep(for: .milliseconds(300))
+                let resumeStart = ContinuousClock.now
+                let resumeEnd = resumeStart + .seconds(5)
+                while ContinuousClock.now < resumeEnd, !stage.state.playing {
+                    try await Task.sleep(for: .milliseconds(25))
+                }
+                let waited = ContinuousClock.now - resumeStart
+                r.resumeWaitMs = Double(waited.components.seconds) * 1000 + Double(waited.components.attoseconds) / 1e15
                 let store = AnswerStore(moduleRoot: ws.root, program: p.relPath)
                 if store.entry(for: marker.text)?.answer != "check" { fail("answer was not saved") }
                 try? fm.removeItem(at: store.fileURL)
