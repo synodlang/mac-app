@@ -15,6 +15,7 @@ enum HeadlessCommands {
         if args.contains("--compare-check") { return await HeadlessLearning.compareCheck(args) }
         if args.contains("--gif-check") { return await HeadlessLearning.gifCheck(args) }
         if args.contains("--export") { return await export(args) }
+        if args.contains("--m9") { return await AcceptanceM9.run(args) }
         if args.contains("--acceptance") { return await acceptance(args) }
         return 2
     }

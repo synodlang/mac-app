@@ -15,3 +15,17 @@ enum AcceptanceThresholds {
     /// The lowest PSNR limit this file may ever carry.
     static let psnrFloor = 34.0
 }
+
+/// Pass/fail limits of the GIF frame check (`Synod --gif-check`, run by `--m9`).
+extension AcceptanceThresholds {
+    /// Each sampled GIF frame against the stage frame drawn at the GIF's size must reach this PSNR (dB).
+    /// Calibration (tcp, 640 px, 20 fps, rate 1, 30 samples): worst sampled frame 58.04 dB (45 frames, 31 sampled);
+    /// raft (2,961 frames, 32 sampled) 45.22 dB; cassandra (3,622 frames, 32 sampled) 49.39 dB. The limit keeps
+    /// about 15 dB of headroom for encoder and machine differences.
+    static let gifMinPSNR = 30.0
+    /// The lowest `gifMinPSNR` may ever be.
+    static let gifPSNRFloor = 28.0
+    /// "Closer to its own frame than to its neighbours' wherever the frames differ": only where two
+    /// neighbouring stage frames are further apart than this (dB).
+    static let gifDistinctRefPSNR = 40.0
+}

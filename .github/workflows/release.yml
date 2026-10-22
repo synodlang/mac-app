@@ -35,13 +35,17 @@ jobs:
         run: swift test
       - name: Bundle
         run: scripts/bundle.sh --version "${GITHUB_REF_NAME#v}"
-      - name: Acceptance
-        run: scripts/acceptance.sh build/Synod.app acc
+      - name: Smoke test
+        run: scripts/smoke.sh build/Synod.app smoke.json
+      # M9 acceptance, which also runs the M8 smoke test and the Raft 1080p60 video acceptance.
+      # The release is created only if this passes.
+      - name: M8 and M9 acceptance
+        run: scripts/acceptance-m9.sh build/Synod.app acc-m9
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: acceptance
-          path: acc
+          name: acceptance-m9
+          path: acc-m9
           if-no-files-found: ignore
       - name: Package
         run: |

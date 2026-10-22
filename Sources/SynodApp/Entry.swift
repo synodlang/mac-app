@@ -6,7 +6,7 @@ import AppKit
 @main
 enum Entry {
     static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export", "--stage-check", "--editor-check",
-                                          "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check"]
+                                          "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check", "--m9"]
 
     static let helpText = """
     Synod: the Mac app for the Synod language.
@@ -36,6 +36,8 @@ enum Entry {
             two runs side by side: sync maps, seeks and following while playing
       Synod --gif-check <file.gif> --module <module> --program p [--width 640] [--fps 20] [--rate 1] [--samples 30] [--report f]
             decodes a GIF from --export and compares it with the stage
+      Synod --m9 <module> --out <dir> [--quick]
+            the whole M9 acceptance (editor, Predict, hit, Break it, Compare, GIF) plus the M8 video; writes report-m9.json
       Synod --help
     """
 

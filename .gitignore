@@ -8,3 +8,6 @@ acc-quick/
 *.xcodeproj
 smoke.json
 smoke-stage.json
+acc-m9/
+acc-m9-quick/
+smoke-*.json

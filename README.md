@@ -7,20 +7,24 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.2.0.** The Mac app implements Synod 0.2. It bundles the `synod` compiler (v0.2.4), the player (v0.2.0) and the examples, so it works offline.
+**v0.2.1.** The Mac app implements Synod 0.2 and adds the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.5), the player (v0.2.1) and the examples (v0.2.1), so it works offline.
 
 What works:
 
 - Open a workspace (a folder with `synod.mod`), with a sidebar of programs, packages and the bundled examples.
 - Run a program (⌘R, or on every change after a 300 ms debounce) in ordered or proportional mode, with an optional seed. Outputs go to the cache, never into your workspace.
-- Play the scene on the stage, with play and pause, previous and next fact, scrubbing, speeds from 0.25x to 4x, markers for questions, captions and broken invariants, and a red banner when an invariant breaks or the run fails.
-- Inspect nodes: exported state at the current fact, the fields that just changed, and the trace around it.
-- Read problems from `synod check` and failed runs, and click one to see the source span (read-only view; "Open in Editor" opens your own editor).
-- Predict, in a minimal form: playback stops at each question, you type an answer, and answers are stored per program.
-- Export video as H.264 or HEVC at 1080p or 4K and 30 or 60 fps.
-- Headless modes: `--smoke` (every example plays at the right pace), `--export` and `--acceptance` (a Raft 1080p60 export is decoded and every sampled frame is compared with the stage player).
+- Play the scene on the stage, with play and pause, previous and next fact, scrubbing, speeds from 0.25x to 4x, markers for questions, captions and broken invariants, and a red banner when an invariant breaks or the run fails. A scene shows its first frame as soon as it loads.
+- Edit source in the app: syntax highlighting from `synod check --tokens`, live diagnostics with underlines and quick fixes, format on save (⌘S), and go to definition.
+- Predict: playback stops at each question; questions asked with choices show numbered buttons (keys 1 to 6), and answers are stored per program.
+- Break it: click a node to crash or restart it, click a message to drop it, drag a box to partition nodes. Each action inserts a block into `define main` at the current simulated time, formats the file and re-runs.
+- Compare: two seeds of a program, or a program before and after Break it, side by side on one timeline.
+- Click a node or a message on the stage to select it and see its state in the inspector.
+- Export video as H.264 or HEVC at 1080p or 4K and 30 or 60 fps, or as an animated GIF.
+- Inspect nodes: exported state at the current fact, the fields that just changed, and the trace around it; read problems from `synod check` and failed runs.
+- A proper app icon.
+- Headless modes: `--smoke`, `--export` (mp4 or gif), `--acceptance` (a Raft 1080p60 export compared with the stage player) and `--m9` (the whole M9 acceptance), plus a check per feature (`--editor-check`, `--predict-check`, `--hit-check`, `--breakit-check`, `--compare-check`, `--gif-check`).
 
-Moving to M9: the editor with diagnostics and quick fixes, full Predict with choices, Break it, Compare, node selection on the stage and GIF export. M10 adds the Claude integration. Everything below the install and build sections is the plan from [06-mac-app.md](https://github.com/synodlang/dsl/blob/main/implementation/06-mac-app.md) and [07-claude-integration.md](https://github.com/synodlang/dsl/blob/main/implementation/07-claude-integration.md); the roadmap is in [10-roadmap.md](https://github.com/synodlang/dsl/blob/main/implementation/10-roadmap.md).
+Still to come in M10: phrase completion and the Claude integration. Everything below the install and build sections is the plan from [06-mac-app.md](https://github.com/synodlang/dsl/blob/main/implementation/06-mac-app.md) and [07-claude-integration.md](https://github.com/synodlang/dsl/blob/main/implementation/07-claude-integration.md); the roadmap is in [10-roadmap.md](https://github.com/synodlang/dsl/blob/main/implementation/10-roadmap.md).
 
 ## Install
 
@@ -50,9 +54,10 @@ swift test
 scripts/bundle.sh       # builds build/Synod.app (universal, ad-hoc signed)
 scripts/smoke.sh        # plays every bundled example headlessly (needs a GUI session)
 scripts/acceptance.sh   # Raft 1080p60 export check, about 5 minutes (add --quick for a short tcp run)
+scripts/acceptance-m9.sh # the whole M9 acceptance and the M8 one, writes acc-m9/report-m9.json (--quick for tcp only)
 ```
 
-`deps.env` pins the bundled `synod` release, player release and examples commit, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.0` prints the CHANGELOG section used as release notes.
+`deps.env` pins the bundled `synod` release, player release and examples commit, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.1` prints the CHANGELOG section used as release notes.
 
 ## Where it fits
 
@@ -67,11 +72,11 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 | Repository | What it is | Status |
 | --- | --- | --- |
 | [dsl](https://github.com/synodlang/dsl) | The language specification and implementation guides | Spec v0.2 |
-| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run` | v0.2.4 released |
+| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run` | v0.2.5 released |
 | [std](https://github.com/synodlang/std) | The standard library packages | In use by the compiler |
 | [examples](https://github.com/synodlang/examples) | Sample programs and acceptance tests | Available |
-| [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.0 released |
-| **mac-app** (this repository) | The Mac app | v0.2.0 (M8); M9 and M10 planned |
+| [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.1 released |
+| **mac-app** (this repository) | The Mac app | v0.2.1 (M9); M10 planned |
 | [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | Planned (M10) |
 | [synodlang.github.io](https://github.com/synodlang/synodlang.github.io) | The website and documentation | Install page live; rest planned (M11) |
 | [homebrew-tap](https://github.com/synodlang/homebrew-tap) | Homebrew formula for `synod` | Updated by compiler releases |

@@ -77,14 +77,14 @@ jobs:
         run: codesign --verify --deep --strict build/Synod.app
       - name: Smoke test (every example plays)
         run: scripts/smoke.sh build/Synod.app smoke.json
-      - name: Acceptance on tcp (pull requests, short run)
+      - name: M9 acceptance, tcp only (pull requests, short run)
         if: github.event_name == 'pull_request'
-        run: scripts/acceptance.sh build/Synod.app acc-quick --quick
+        run: scripts/acceptance-m9.sh build/Synod.app acc-m9-quick --quick
       - uses: actions/upload-artifact@v4
         if: always() && github.event_name == 'pull_request'
         with:
-          name: acceptance-quick
-          path: acc-quick
+          name: acceptance-m9-quick
+          path: acc-m9-quick
           if-no-files-found: ignore
       - name: Package app
         run: |
@@ -113,11 +113,13 @@ jobs:
           key: deps-${{ hashFiles('deps.env') }}
       - run: scripts/fetch-deps.sh
       - run: scripts/bundle.sh
-      - name: Raft 1080p60 export acceptance
-        run: scripts/acceptance.sh build/Synod.app acc
+      # Runs the editor, Predict, hit, Break it, Compare and GIF checks, then the M8 smoke test and
+      # the Raft 1080p60 video acceptance. Writes report-m9.json, tcp.gif and m8/raft.mp4.
+      - name: M9 acceptance (includes the M8 Raft video)
+        run: scripts/acceptance-m9.sh build/Synod.app acc-m9
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: acceptance
-          path: acc
+          name: acceptance-m9
+          path: acc-m9
           if-no-files-found: ignore

@@ -23,17 +23,6 @@ enum HeadlessLearning {
         var checks: [Check]
     }
 
-    /// Limits of the GIF frame check, calibrated on tcp, raft and cassandra (see `gifCheck`).
-    enum Thresholds {
-        /// Each sampled GIF frame against the stage frame at 640 px.
-        static let gifMinPSNR = 30.0
-        /// The lowest `gifMinPSNR` may ever be.
-        static let gifPSNRFloor = 28.0
-        /// "Closer to its own frame than to its neighbours' wherever the frames differ": only where two
-        /// neighbouring stage frames are further apart than this (dB).
-        static let distinctRefPSNR = 40.0
-    }
-
     // MARK: Plumbing
 
     static func format(_ v: Double) -> String { v == v.rounded() ? String(Int(v)) : String(format: "%.2f", v) }
@@ -750,7 +739,7 @@ enum HeadlessLearning {
             h.fail("usage: --gif-check <file.gif> --module <module> --program <name> [--width 640] [--fps 20] [--rate 1] [--samples 30] [--report file]")
             return 2
         }
-        precondition(Thresholds.gifMinPSNR >= Thresholds.gifPSNRFloor, "GIF PSNR threshold below the floor")
+        precondition(AcceptanceThresholds.gifMinPSNR >= AcceptanceThresholds.gifPSNRFloor, "GIF PSNR threshold below the floor")
         var options = GIFExportOptions()
         if let w = h.value(of: "--width", in: args).flatMap(Int.init) { options.width = w }
         if let f = h.value(of: "--fps", in: args).flatMap(Int.init) { options.fps = f }
@@ -848,10 +837,10 @@ enum HeadlessLearning {
                 guard ref.width == g.width, ref.height == g.height else { fail("reference \(ref.width)x\(ref.height) differs from the GIF \(g.width)x\(g.height)"); break }
                 let p = FrameCompare.psnr(g, ref)
                 if p < worst { worst = p; worstFrame = k }
-                if p < Thresholds.gifMinPSNR { fail("frame \(k) PSNR \(String(format: "%.2f", p)) dB < \(Thresholds.gifMinPSNR)") }
+                if p < AcceptanceThresholds.gifMinPSNR { fail("frame \(k) PSNR \(String(format: "%.2f", p)) dB < \(AcceptanceThresholds.gifMinPSNR)") }
                 for j in [k - 1, k + 1] where j >= 0 && j < n {
                     let other = try await reference(j)
-                    if FrameCompare.psnr(ref, other) < Thresholds.distinctRefPSNR {
+                    if FrameCompare.psnr(ref, other) < AcceptanceThresholds.gifDistinctRefPSNR {
                         checkedNeighbours += 1
                         let pj = FrameCompare.psnr(g, other)
                         if pj > p { fail("frame \(k) is closer to the stage frame \(j) (\(String(format: "%.2f", pj)) dB) than to its own (\(String(format: "%.2f", p)) dB)") }

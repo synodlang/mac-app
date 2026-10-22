@@ -4,6 +4,35 @@ All notable changes to the Synod Mac app. Every `synodlang` repository shares MA
 
 ## Unreleased
 
+## v0.2.1 — 2026-10-22
+
+Implements Synod 0.2.
+
+### Added
+
+- Editor: syntax highlighting from `synod check --tokens`, live diagnostics with underlines and quick fixes (⌘.), format on save (⌘S) and go to definition, with prompts for unsaved changes.
+- Predict choices: questions asked with `choosing` show numbered buttons (keys 1 to 6); the answer stores the choice.
+- Break it: click a node to crash or restart it, click a message to drop it and drag a box to partition nodes; each action inserts a block into `define main` at the chosen simulated time and re-runs.
+- Compare: two seeds, or a program before and after Break it, side by side on one timeline.
+- Click a node or message on the stage to select it.
+- GIF export (480 to 960 px, 10 to 50 fps, with a time range) in the export sheet and `--export … .gif`.
+- App icon.
+- Headless checks `--editor-check`, `--predict-check`, `--hit-check`, `--breakit-check`, `--compare-check`, `--gif-check` and `--m9`, with `scripts/acceptance-m9.sh` and a CI job that runs it on main and tags.
+
+### Changed
+
+- Bundled `synod` v0.2.5, player v0.2.1 and examples v0.2.1, pinned and verified in `deps.env`.
+- Headless modes use a temporary data directory, so they never touch your recents or Predict answers.
+- Loosened the bounds of timing-sensitive tests.
+- Release builds must pass the M8 and M9 acceptance runs first.
+
+### Fixed
+
+- A scene shows its poster frame as soon as it loads, before it plays.
+- Predict stops reliably at each question, including at the end of playback and after a seek.
+- `Synod <folder>` opens that folder as the workspace.
+- The app never resolves its own executable as the compiler.
+
 ## v0.2.0 — 2026-10-22
 
 Implements Synod 0.2.
