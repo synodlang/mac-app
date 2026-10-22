@@ -109,6 +109,9 @@ enum LaunchArguments {
     /// Never shown; stands in for "no workspace" in the workspace window group.
     static let placeholder = URL(fileURLWithPath: "/dev/null")
 
+    /// Set once the launch folder has been opened, so it is not opened again.
+    @MainActor static var routed = false
+
     static var workspaceURL: URL? { workspaceURL(in: Array(CommandLine.arguments.dropFirst())) }
 
     /// The first argument that is not an option (or macOS's `-NS...` defaults pairs) and names an existing path.
