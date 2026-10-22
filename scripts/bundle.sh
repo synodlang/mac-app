@@ -54,6 +54,7 @@ for f in stage.html stage.js export.html export.js; do
     echo "bundle: warning: Web/$f not present yet" >&2
   fi
 done
+cp Support/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 cp -R .deps/examples "$app/Contents/Resources/examples"
 rm -rf "$app/Contents/Resources/examples/.commit" "$app/Contents/Resources/examples/.github" "$app/Contents/Resources/examples/.gitignore"
 
