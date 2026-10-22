@@ -369,8 +369,8 @@ define main
     let pause = try #require(scene.markers.first { $0.known == .pause })
     #expect(pause.choices == ["It fails until the replica returns", "It succeeds; a hint replays it when the replica returns", "It succeeds, but the replica never gets it"])
     #expect(scene.markers.first { $0.known == .caption }?.choices == [])
-    // Scenes written before M9 have no choices.
-    #expect(try Fixtures.scene("tcp").markers.allSatisfy { $0.choices.isEmpty })
+    // Every bundled demo offers choices since examples v0.2.1.
+    #expect(try Fixtures.scene("tcp").markers.first { $0.known == .pause }?.choices.count == 4)
 
     let json = #"""
     {"format":"synod-scene/1","duration":10,"canvas":{"w":1,"h":1},"markers":[

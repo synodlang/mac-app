@@ -565,7 +565,7 @@
 {"seq":564,"t":1961127,"ev":"net.Arrived","node":"n1","msg":{"id":149,"type":"raft.Heartbeat","fields":{"term":"…"}},"from":"n3","to":"n1"}
 {"seq":565,"t":1963959,"ev":"net.Arrived","node":"n4","msg":{"id":151,"type":"raft.Heartbeat","fields":{"term":"…"}},"from":"n3","to":"n4"}
 {"seq":566,"t":2000000,"ev":"sim.Crashed","node":"n3"}
-{"seq":567,"t":2000000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"The leader just crashed. What do the followers do now?"}}}
+{"seq":567,"t":2000000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"The leader just crashed. What do the followers do now?","Choices":["Wait for the old leader to return","Time out and start an election","Ask a coordinator service to pick a new leader","Stop accepting writes for good"]}}}
 {"seq":568,"t":2000000,"ev":"sim.Fired","node":"n1"}
 {"seq":569,"t":2000000,"ev":"sim.Fired","node":"n2"}
 {"seq":570,"t":2000000,"ev":"sim.Fired","node":"n4"}

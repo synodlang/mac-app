@@ -12,7 +12,7 @@ steps:
   sim.Changed tcp.State of n1 from "CLOSED" to "SYN-SENT"
   net.Sent #1 tcp.Syn{Seq 100} from n1 to n2
 @5ms timer main
-  sim.Emitted lesson.Asked{Question "What does the server send back after a SYN?"} by nobody
+  sim.Emitted lesson.Asked{Question "What does the server send back after a SYN?", Choices {"An ACK, and the connection is open", "A SYN-ACK: its own sequence number and an acknowledgment of the client's", "A FIN, closing the connection", "Nothing until the client sends data"}} by nobody
 @22.142ms receive n2
   net.Arrived #1 tcp.Syn{Seq 100} from n1 to n2
   sim.Changed tcp.State of n2 from "LISTEN" to "SYN-RECEIVED"

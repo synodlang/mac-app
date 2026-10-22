@@ -38,7 +38,7 @@ rm -f "$deps/synod/synod"
 if [[ $skip_player -eq 0 ]]; then
   [[ -d "$player/node_modules/.bin" ]] || die "no node_modules in $player; run npm ci there (or pass --skip-player)"
   version="$(node -p "require('$player/package.json').version")-local"
-  (cd "$player" && ./node_modules/.bin/esbuild src/iife.ts --bundle --minify --target=es2022 --format=iife \
+  (cd "$player" && ./node_modules/.bin/esbuild src/iife.ts --bundle --minify --target=es2022 --format=iife --global-name=SynodPlayer \
     --legal-comments=none --log-level=warning --define:__VERSION__="\"$version\"" \
     --outfile="$deps/player/synod-player.iife.js")
   echo "local-deps: player $version"

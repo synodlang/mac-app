@@ -7,7 +7,7 @@
 {"seq":6,"t":0,"ev":"sim.Injected","node":"n1","record":{"type":"tcp.Open","fields":{"Server":{"node":"n2"}}}}
 {"seq":7,"t":0,"ev":"sim.Changed","node":"n1","field":"tcp.State","old":"CLOSED","new":"SYN-SENT"}
 {"seq":8,"t":0,"ev":"net.Sent","node":"n1","msg":{"id":1,"type":"tcp.Syn","fields":{"Seq":100}},"from":"n1","to":"n2"}
-{"seq":9,"t":5000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"What does the server send back after a SYN?"}}}
+{"seq":9,"t":5000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"What does the server send back after a SYN?","Choices":["An ACK, and the connection is open","A SYN-ACK: its own sequence number and an acknowledgment of the client's","A FIN, closing the connection","Nothing until the client sends data"]}}}
 {"seq":10,"t":22142,"ev":"net.Arrived","node":"n2","msg":{"id":1,"type":"tcp.Syn","fields":{"Seq":100}},"from":"n1","to":"n2"}
 {"seq":11,"t":22142,"ev":"sim.Changed","node":"n2","field":"tcp.State","old":"LISTEN","new":"SYN-RECEIVED"}
 {"seq":12,"t":22142,"ev":"net.Sent","node":"n2","msg":{"id":2,"type":"tcp.SynAck","fields":{"Seq":300,"AckNo":101}},"from":"n2","to":"n1"}

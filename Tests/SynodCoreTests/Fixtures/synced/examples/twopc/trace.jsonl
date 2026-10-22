@@ -22,6 +22,6 @@
 {"seq":21,"t":32533,"ev":"net.Arrived","node":"n1","msg":{"id":4,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n3","to":"n1"}
 {"seq":22,"t":38926,"ev":"net.Arrived","node":"n1","msg":{"id":6,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n4","to":"n1"}
 {"seq":23,"t":45000,"ev":"sim.Crashed","node":"n1"}
-{"seq":24,"t":45000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"The coordinator crashed while votes were in flight. What can a prepared participant do?"}}}
+{"seq":24,"t":45000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"The coordinator crashed while votes were in flight. What can a prepared participant do?","Choices":["Commit, because it voted yes","Abort on its own, because the coordinator is gone","Wait for the coordinator: it voted yes, so it cannot decide alone","Elect a new coordinator among the participants"]}}}
 {"seq":25,"t":45881,"ev":"net.Dropped","node":"n1","msg":{"id":5,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n2","to":"n1","reason":"crashed"}
 {"seq":26,"t":45881,"ev":"sim.Ended","reason":"empty"}

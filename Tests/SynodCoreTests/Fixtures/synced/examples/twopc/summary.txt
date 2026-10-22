@@ -34,7 +34,7 @@ steps:
   net.Arrived #6 twopc.Vote{tx 1, yes true} from n4 to n1
 @45ms timer main
   sim.Crashed n1
-  sim.Emitted lesson.Asked{Question "The coordinator crashed while votes were in flight. What can a prepared participant do?"} by nobody
+  sim.Emitted lesson.Asked{Question "The coordinator crashed while votes were in flight. What can a prepared participant do?", Choices {"Commit, because it voted yes", "Abort on its own, because the coordinator is gone", "Wait for the coordinator: it voted yes, so it cannot decide alone", "Elect a new coordinator among the participants"}} by nobody
 @45.881ms receive n1
   net.Dropped #5 twopc.Vote{tx 1, yes true} from n2 to n1 (crashed)
   sim.Ended empty
