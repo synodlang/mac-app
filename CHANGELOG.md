@@ -18,7 +18,7 @@ Implements Synod 0.2.
 
 ### Changed
 
-- Bundled `synod` v0.2.6 and agent-skills v0.2.0; player v0.2.1 and examples v0.2.1 are unchanged. All pinned and verified in `deps.env`.
+- Bundled `synod` v0.2.6 and agent-skills v0.2.1; player v0.2.1 and examples v0.2.1 are unchanged. All pinned and verified in `deps.env`.
 - Release builds must pass the M8, M9 and M10 acceptance runs first.
 
 ## v0.2.1 — 2026-10-22

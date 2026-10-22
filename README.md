@@ -7,7 +7,7 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.2.2.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.6), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.0), so it works offline.
+**v0.2.2.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.6), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.1), so it works offline.
 
 What works:
 
@@ -82,7 +82,7 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 | [examples](https://github.com/synodlang/examples) | Sample programs and acceptance tests | Available |
 | [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.1 released |
 | **mac-app** (this repository) | The Mac app | v0.2.2 (M10) |
-| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.0 released |
+| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.1 released |
 | [synodlang.github.io](https://github.com/synodlang/synodlang.github.io) | The website and documentation | Install page live; rest planned (M11) |
 | [homebrew-tap](https://github.com/synodlang/homebrew-tap) | Homebrew formula for `synod` | Updated by compiler releases |
 | [scoop-bucket](https://github.com/synodlang/scoop-bucket) | Scoop manifest for `synod` | Updated by compiler releases |
