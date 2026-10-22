@@ -61,8 +61,16 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
-      # TODO(task B): add scripts/sync-fixtures.sh --check once it exists, with the
-      # compiler repository checked out at the pinned tag into ./compiler.
+      - name: Read the pinned compiler tag
+        id: pins
+        run: grep '^SYNOD_VERSION=' deps.env >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          repository: synodlang/compiler
+          ref: ${{ steps.pins.outputs.SYNOD_VERSION }}
+          path: compiler
+      - name: Check fixtures match the compiler
+        run: scripts/sync-fixtures.sh --check --compiler compiler
       - name: Bundle
         run: scripts/bundle.sh
       - name: Verify signature
