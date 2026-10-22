@@ -6,7 +6,8 @@ import AppKit
 @main
 enum Entry {
     static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export", "--stage-check", "--editor-check",
-                                          "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check", "--m9"]
+                                          "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check", "--m9",
+                                          "--completion-check", "--claude-check", "--mcp-check"]
 
     static let helpText = """
     Synod: the Mac app for the Synod language.
@@ -26,6 +27,12 @@ enum Entry {
             the stage draws a loaded scene while paused and Predict stops at the pause marker
       Synod --editor-check <module> [--report f]
             the editor on a temporary copy: tokens, live diagnostics, quick fix, save with fmt, go to definition
+      Synod --completion-check <module> [--report f]
+            phrase completion on a temporary copy: the scope of every file, net.Se with placeholders, receivers, timings
+      Synod --claude-check <module> [--claude <fake-claude>] [--skills <agent-skills>] [--report f]
+            the prompt bar against the built fake-claude: argv, environment, MCP edits, banner, Revert, Stop
+      Synod --mcp-check <module> [--bridge <synod-editor-mcp>] [--golden tools.json] [--report f]
+            the editor MCP server through the built bridge on a temporary copy: tools, edits, save, tokens, no TCP listener
       Synod --predict-check <module> [--program p] [--report f]
             every program's Predict choices: stop at each question, choose, save, play to the end
       Synod --hit-check <module> [--program p] [--report f]
