@@ -31,6 +31,11 @@ public actor UnixSocketListener {
     public var folderURL: URL? { folder }
     public var connectionCount: Int { connections.count }
 
+    /// The connections that logged in with `token`.
+    public func connectionCount(token: String) -> Int {
+        connections.values.filter { $0.token.map { BridgeHandshake.constantTimeEquals($0, token) } == true }.count
+    }
+
     /// Takes a hold on the listener, starting it when it is not running. Returns the socket URL.
     @discardableResult
     public func acquire() throws -> URL {

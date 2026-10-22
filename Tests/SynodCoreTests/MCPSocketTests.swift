@@ -363,3 +363,22 @@ struct FakeClaudeTests {
         #expect(await p.waitForExit(timeout: 5) == 143)
     }
 }
+
+struct MCPConnectionCountTests {
+    @Test func connectionsAreCountedPerToken() async throws {
+        let base = try shortTempDir()
+        defer { try? FileManager.default.removeItem(at: base) }
+        let token = try MCPTokens.generate()
+        let other = try MCPTokens.generate()
+        let listener = UnixSocketListener(authority: SingleGrantAuthority(token: token, editor: MockEditor()), baseDirectory: base)
+        let sock = try await listener.acquire()
+        defer { Task { await listener.release() } }
+        let c = try #require(TestSocket(path: sock.path))
+        c.send(BridgeHandshake(token: token, workspace: nil).line)
+        #expect(await c.readLine() == #"{"ok":true}"#)
+        #expect(await listener.connectionCount(token: token) == 1)
+        #expect(await listener.connectionCount(token: other) == 0)
+        await listener.closeConnections(token: token)
+        #expect(await listener.connectionCount(token: token) == 0)
+    }
+}

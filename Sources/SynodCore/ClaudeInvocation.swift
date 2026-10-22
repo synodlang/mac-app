@@ -8,7 +8,7 @@ public struct ClaudeInvocation: Sendable, Equatable {
     public static let editorPrompt = "In this workspace, edit Synod files only with the synod-editor tools: read_buffer before editing, apply_edits or replace_buffer to change, create_file for new files, get_diagnostics (fresh) until clean, then save_files, and only then run_summary. Use the synod tools for doc, explain, check and run_summary."
     public static let defaultModel = "claude-opus-5-5"
 
-    /// Host variables copied when set. Nothing else is passed, `ANTHROPIC_*` included.
+    /// Host variables copied when set. Nothing else is passed: the app hands Claude Code no credential of any kind.
     public static let inheritedVariables = ["HOME", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "TMPDIR"]
     public static let fixedPath = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
 

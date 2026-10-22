@@ -24,7 +24,7 @@
   {
    "path": "example.com/demo/twopc",
    "name": "twopc",
-   "qualifier": "twopc",
+   "qualifier": "",
    "title": "",
    "std": false,
    "activates": false,
@@ -116,10 +116,6 @@
      "pattern": "[n: Node] Prepare [round: number]",
      "items": [
       {
-       "hole": "n",
-       "type": "Node"
-      },
-      {
        "word": "Prepare"
       },
       {
@@ -147,10 +143,6 @@
     {
      "pattern": "[n: Node] secret",
      "items": [
-      {
-       "hole": "n",
-       "type": "Node"
-      },
       {
        "word": "secret"
       }
@@ -404,10 +396,6 @@
      "pattern": "[n: r.Node] r.Campaign",
      "items": [
       {
-       "hole": "n",
-       "type": "r.Node"
-      },
-      {
        "word": "r.Campaign"
       }
      ],
@@ -431,10 +419,6 @@
     {
      "pattern": "[n: r.Node] r.Vote [for: node]",
      "items": [
-      {
-       "hole": "n",
-       "type": "r.Node"
-      },
       {
        "word": "r.Vote"
       },

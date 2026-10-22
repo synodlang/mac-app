@@ -1,0 +1,1579 @@
+{
+ "format": "synod-doc/1",
+ "diagnostics": [],
+ "scope": {
+  "file": "twopc/demo.synod",
+  "package": "main",
+  "imports": [
+   {
+    "path": "github.com/synodlang/examples/twopc",
+    "qualifier": "twopc"
+   },
+   {
+    "path": "std/lesson",
+    "qualifier": "lesson"
+   },
+   {
+    "path": "std/net",
+    "qualifier": "net"
+   },
+   {
+    "path": "std/sim",
+    "qualifier": "sim"
+   }
+  ]
+ },
+ "packages": [
+  {
+   "path": "github.com/synodlang/examples/twopc#main",
+   "name": "main",
+   "qualifier": "",
+   "title": "",
+   "std": false,
+   "activates": false,
+   "phrases": [],
+   "records": [],
+   "node": null
+  },
+  {
+   "path": "github.com/synodlang/examples/twopc",
+   "name": "twopc",
+   "qualifier": "twopc",
+   "title": "",
+   "std": false,
+   "activates": true,
+   "phrases": [
+    {
+     "pattern": "twopc.Coordinate [ps: list of twopc.Node] from [c: twopc.Node]",
+     "items": [
+      {
+       "word": "twopc.Coordinate"
+      },
+      {
+       "hole": "ps",
+       "type": "list of twopc.Node"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "c",
+       "type": "twopc.Node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "twopc/twopc.synod",
+      "line": 27,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "[n: twopc.Node] twopc.Decide [commit: bool]",
+     "items": [
+      {
+       "word": "twopc.Decide"
+      },
+      {
+       "hole": "commit",
+       "type": "bool"
+      }
+     ],
+     "blocks": [],
+     "receiver": {
+      "name": "n",
+      "type": "twopc.Node"
+     },
+     "gives": "—",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "twopc/twopc.synod",
+      "line": 30,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "twopc.Atomic",
+     "items": [
+      {
+       "word": "twopc.Atomic"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "bool",
+     "contexts": null,
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "",
+     "def": {
+      "file": "twopc/twopc.synod",
+      "line": 74,
+      "col": 1
+     }
+    }
+   ],
+   "records": [
+    {
+     "name": "twopc.Begin",
+     "doc": "",
+     "fields": [
+      {
+       "name": "Tx",
+       "type": "number",
+       "exported": true
+      }
+     ]
+    },
+    {
+     "name": "twopc.Prepare",
+     "doc": "",
+     "fields": []
+    },
+    {
+     "name": "twopc.Vote",
+     "doc": "",
+     "fields": []
+    },
+    {
+     "name": "twopc.Decision",
+     "doc": "",
+     "fields": []
+    }
+   ],
+   "node": {
+    "doc": "",
+    "fields": [
+     {
+      "name": "State",
+      "type": "text",
+      "exported": true
+     },
+     {
+      "name": "Participants",
+      "type": "list of twopc.Node",
+      "exported": true
+     }
+    ]
+   }
+  },
+  {
+   "path": "std/lesson",
+   "name": "lesson",
+   "qualifier": "lesson",
+   "title": "Predict mode and captions",
+   "std": true,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "lesson.Ask [q: text]",
+     "items": [
+      {
+       "word": "lesson.Ask"
+      },
+      {
+       "hole": "q",
+       "type": "text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "Emit `Asked` with no choices; the player pauses and asks the viewer to predict",
+     "def": {
+      "file": "std/lesson/lesson.synod",
+      "line": 12,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "lesson.Ask [q: text] choosing [c: list of text]",
+     "items": [
+      {
+       "word": "lesson.Ask"
+      },
+      {
+       "hole": "q",
+       "type": "text"
+      },
+      {
+       "word": "choosing"
+      },
+      {
+       "hole": "c",
+       "type": "list of text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "Emit `Asked` with the choices `c`: 2 to 6 distinct, non-empty texts, else `bad-argument`; the player pauses and offers them",
+     "def": {
+      "file": "std/lesson/lesson.synod",
+      "line": 16,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "lesson.Note [t: text]",
+     "items": [
+      {
+       "word": "lesson.Note"
+      },
+      {
+       "hole": "t",
+       "type": "text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": false,
+     "exported": true,
+     "doc": "Emit `Noted`; the player shows a caption",
+     "def": {
+      "file": "std/lesson/lesson.synod",
+      "line": 20,
+      "col": 1
+     }
+    }
+   ],
+   "records": [
+    {
+     "name": "lesson.Asked",
+     "doc": "",
+     "fields": [
+      {
+       "name": "Question",
+       "type": "text",
+       "exported": true
+      },
+      {
+       "name": "Choices",
+       "type": "list of text",
+       "exported": true
+      }
+     ]
+    },
+    {
+     "name": "lesson.Noted",
+     "doc": "",
+     "fields": [
+      {
+       "name": "Text",
+       "type": "text",
+       "exported": true
+      }
+     ]
+    }
+   ],
+   "node": null
+  },
+  {
+   "path": "std/net",
+   "name": "net",
+   "qualifier": "net",
+   "title": "the simulated network",
+   "std": true,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "net.Send [m: msg] from [a: node] to [b: node]",
+     "items": [
+      {
+       "word": "net.Send"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "b",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "node"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Send through the network from `a`, which must be the receiver",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Latency between [a: time] and [b: time]",
+     "items": [
+      {
+       "word": "net.Latency"
+      },
+      {
+       "word": "between"
+      },
+      {
+       "hole": "a",
+       "type": "time"
+      },
+      {
+       "word": "and"
+      },
+      {
+       "hole": "b",
+       "type": "time"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Uniform delay per message (default 10ms–30ms)",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 6,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Loss [p: number]",
+     "items": [
+      {
+       "word": "net.Loss"
+      },
+      {
+       "hole": "p",
+       "type": "number"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Probability each message is lost (default 0)",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 9,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Partition [a: list of node] from [b: list of node]",
+     "items": [
+      {
+       "word": "net.Partition"
+      },
+      {
+       "hole": "a",
+       "type": "list of node"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "b",
+       "type": "list of node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Cut every link between the two groups",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 12,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Heal",
+     "items": [
+      {
+       "word": "net.Heal"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Remove all partitions",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 15,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.DropNext [type: text] from [a: node] to [b: node]",
+     "items": [
+      {
+       "word": "net.DropNext"
+      },
+      {
+       "hole": "type",
+       "type": "text"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "b",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Drop the next message of that record type (unqualified name) on that link",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 18,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Received [m: msg] from [a: node]",
+     "items": [
+      {
+       "word": "net.Received"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "node"
+     ],
+     "kind": "node-event",
+     "native": true,
+     "exported": true,
+     "doc": "Node event: a message arrives at the receiving node",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 21,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Sent [m: msg] from [a: node] to [b: node]",
+     "items": [
+      {
+       "word": "net.Sent"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "b",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: net.Send m from a to b",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 24,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Arrived [m: msg] from [a: node] to [b: node]",
+     "items": [
+      {
+       "word": "net.Arrived"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "b",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: the message is received",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 27,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Dropped [m: msg] from [a: node] to [b: node] because [r: text]",
+     "items": [
+      {
+       "word": "net.Dropped"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "a",
+       "type": "node"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "b",
+       "type": "node"
+      },
+      {
+       "word": "because"
+      },
+      {
+       "hole": "r",
+       "type": "text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: loss, partition, crash or net.DropNext",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 30,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Partitioned [a: list of node] from [b: list of node]",
+     "items": [
+      {
+       "word": "net.Partitioned"
+      },
+      {
+       "hole": "a",
+       "type": "list of node"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "b",
+       "type": "list of node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: net.Partition",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 33,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Healed",
+     "items": [
+      {
+       "word": "net.Healed"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: net.Heal",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 36,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Id [m: msg]",
+     "items": [
+      {
+       "word": "net.Id"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "number",
+     "contexts": [
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "The message id of the net fact that bound `m`",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 39,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "net.Type [m: msg]",
+     "items": [
+      {
+       "word": "net.Type"
+      },
+      {
+       "hole": "m",
+       "type": "msg"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "text",
+     "contexts": [
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "The unqualified record type name of `m`",
+     "def": {
+      "file": "std/net/net.synod",
+      "line": 42,
+      "col": 1
+     }
+    }
+   ],
+   "records": [],
+   "node": null
+  },
+  {
+   "path": "std/sim",
+   "name": "sim",
+   "qualifier": "sim",
+   "title": "nodes, runs, faults",
+   "std": true,
+   "activates": false,
+   "phrases": [
+    {
+     "pattern": "sim.Seed [n: number]",
+     "items": [
+      {
+       "word": "sim.Seed"
+      },
+      {
+       "hole": "n",
+       "type": "number"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Sets the seed of the run's PRNG; `n` is a whole number from 0 to 2^53, otherwise `bad-argument`. The `--seed` flag, when given, wins over `sim.Seed`; without either the seed is 1. The trace header records the seed in force when `define main` returns.",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 3,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.StopAt [t: time]",
+     "items": [
+      {
+       "word": "sim.StopAt"
+      },
+      {
+       "hole": "t",
+       "type": "time"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "End the run at simulated time `t`",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 6,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Spawn [p: package]",
+     "items": [
+      {
+       "word": "sim.Spawn"
+      },
+      {
+       "hole": "p",
+       "type": "package"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "p.Node",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Create and start one node",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 9,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Cluster of [count: number] running [p: package]",
+     "items": [
+      {
+       "word": "sim.Cluster"
+      },
+      {
+       "word": "of"
+      },
+      {
+       "hole": "count",
+       "type": "number"
+      },
+      {
+       "word": "running"
+      },
+      {
+       "hole": "p",
+       "type": "package"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "list of p.Node",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Create and start `count` nodes",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 12,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Crash [n: node]",
+     "items": [
+      {
+       "word": "sim.Crash"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Stop a node (`spec/07`)",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 15,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Restart [n: node]",
+     "items": [
+      {
+       "word": "sim.Restart"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Restart a crashed node with fresh state",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 18,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Remove [n: node]",
+     "items": [
+      {
+       "word": "sim.Remove"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "main"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Remove a node for good",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 21,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Id [n: node]",
+     "items": [
+      {
+       "word": "sim.Id"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "number",
+     "contexts": [
+      "node",
+      "main",
+      "check",
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "1, 2, 3… in creation order",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 24,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Name [n: node]",
+     "items": [
+      {
+       "word": "sim.Name"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "text",
+     "contexts": [
+      "node",
+      "main",
+      "check",
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "`\"n1\"`, `\"n2\"`, …",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 27,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Nobody",
+     "items": [
+      {
+       "word": "sim.Nobody"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "node",
+     "contexts": [
+      "node",
+      "main",
+      "check",
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "The \"no node\" value",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 30,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Nodes",
+     "items": [
+      {
+       "word": "sim.Nodes"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "list of node",
+     "contexts": [
+      "main",
+      "check",
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "All nodes not removed, in creation order",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 33,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.NodesRunning [p: package]",
+     "items": [
+      {
+       "word": "sim.NodesRunning"
+      },
+      {
+       "hole": "p",
+       "type": "package"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "list of p.Node",
+     "contexts": [
+      "main",
+      "check",
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Nodes running `p`",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 36,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.IsUp [n: node]",
+     "items": [
+      {
+       "word": "sim.IsUp"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "bool",
+     "contexts": [
+      "main",
+      "check",
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "Not crashed and not removed",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 39,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Delivered [r: msg]",
+     "items": [
+      {
+       "word": "sim.Delivered"
+      },
+      {
+       "hole": "r",
+       "type": "msg"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "node"
+     ],
+     "kind": "node-event",
+     "native": true,
+     "exported": true,
+     "doc": "Node event: a record injected with deliver",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 42,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Started",
+     "items": [
+      {
+       "word": "sim.Started"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: the run starts",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 45,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Ended",
+     "items": [
+      {
+       "word": "sim.Ended"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: the run ends",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 48,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Added [n: node]",
+     "items": [
+      {
+       "word": "sim.Added"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: a node is created",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 51,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Removed [n: node]",
+     "items": [
+      {
+       "word": "sim.Removed"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: a node is removed with sim.Remove",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 54,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Crashed [n: node]",
+     "items": [
+      {
+       "word": "sim.Crashed"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: a node is stopped with sim.Crash",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 57,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Restarted [n: node]",
+     "items": [
+      {
+       "word": "sim.Restarted"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: a node is restarted with sim.Restart",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 60,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Changed [f: field] of [n: node] from [old: value] to [new: value]",
+     "items": [
+      {
+       "word": "sim.Changed"
+      },
+      {
+       "hole": "f",
+       "type": "field"
+      },
+      {
+       "word": "of"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      },
+      {
+       "word": "from"
+      },
+      {
+       "hole": "old",
+       "type": "value"
+      },
+      {
+       "word": "to"
+      },
+      {
+       "hole": "new",
+       "type": "value"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: set changes an exported node field",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 63,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Injected [r: msg] into [n: node]",
+     "items": [
+      {
+       "word": "sim.Injected"
+      },
+      {
+       "hole": "r",
+       "type": "msg"
+      },
+      {
+       "word": "into"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: deliver injects a record from main",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 66,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Fired on [n: node]",
+     "items": [
+      {
+       "word": "sim.Fired"
+      },
+      {
+       "word": "on"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: an after timer fires on a node",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 69,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Broken [rule: text]",
+     "items": [
+      {
+       "word": "sim.Broken"
+      },
+      {
+       "hole": "rule",
+       "type": "text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: an always turns false",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 72,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Emitted [e: msg] by [n: node]",
+     "items": [
+      {
+       "word": "sim.Emitted"
+      },
+      {
+       "hole": "e",
+       "type": "msg"
+      },
+      {
+       "word": "by"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: emit e by n; n is sim.Nobody when main emits",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 75,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.Failed [error: text]",
+     "items": [
+      {
+       "word": "sim.Failed"
+      },
+      {
+       "hole": "error",
+       "type": "text"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "—",
+     "contexts": [
+      "look"
+     ],
+     "kind": "trace-event",
+     "native": true,
+     "exported": true,
+     "doc": "Trace event: a run-time error stops the run",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 78,
+      "col": 1
+     }
+    },
+    {
+     "pattern": "sim.StateRows [n: node]",
+     "items": [
+      {
+       "word": "sim.StateRows"
+      },
+      {
+       "hole": "n",
+       "type": "node"
+      }
+     ],
+     "blocks": [],
+     "receiver": null,
+     "gives": "list of text",
+     "contexts": [
+      "look"
+     ],
+     "kind": "phrase",
+     "native": true,
+     "exported": true,
+     "doc": "One line per exported field of `n`: name and value as text",
+     "def": {
+      "file": "std/sim/sim.synod",
+      "line": 81,
+      "col": 1
+     }
+    }
+   ],
+   "records": [],
+   "node": null
+  }
+ ]
+}

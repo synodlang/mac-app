@@ -151,3 +151,27 @@ private func heads(_ text: String) throws -> [String] {
     cleared.clear()
     #expect(cleared.isEmpty && cleared.current == nil)
 }
+
+// The output of the released compiler for twopc/demo.synod of the examples module (`synod doc --json --scope`):
+// receiver phrases list their items without the receiver hole, the file's own package has no qualifier,
+// and an imported phrase's head carries the qualifier the file writes.
+@Test func realScopeOfTheTwopcDemo() throws {
+    let report = try DocReport.parse(try Fixtures.data("doc/scope-demo-real.json"))
+    #expect(Completion.qualifiers(of: report) == ["twopc", "lesson", "net", "sim"])
+    let (req, items) = try #require(Completion.complete(in: "  twopc.Co", caret: 10, report: report))
+    #expect(req.mode == .qualified("twopc"))
+    #expect(items.map(\.head) == ["twopc.Coordinate"])
+    let ins = Completion.insertion(of: items[0], replacing: req.replaceRange)
+    #expect(ins.text == "twopc.Coordinate ps from c")
+    #expect(ins.placeholders.count == 2)
+    // `n.twopc.` offers the imported package's receiver phrases (without the qualifier) and Node fields.
+    let (rq, ritems) = try #require(Completion.complete(in: "  n.twopc.", caret: 10, report: report))
+    #expect(rq.mode == .receiverQualified("twopc"))
+    #expect(ritems.map(\.head).contains("Decide"))
+    #expect(ritems.first { $0.head == "Decide" }?.insertText == "Decide commit")
+    #expect(ritems.map(\.head).contains("State") && ritems.map(\.head).contains("Participants"))
+    // Free context: the main package has no phrases of its own, so only qualified heads come.
+    let free = try #require(Completion.complete(in: "  ", caret: 2, report: report)).1
+    #expect(!free.isEmpty && free.allSatisfy { $0.head.contains(".") })
+    #expect(!free.contains { $0.head == "twopc.Decide" })      // a receiver phrase is not offered without a receiver
+}
