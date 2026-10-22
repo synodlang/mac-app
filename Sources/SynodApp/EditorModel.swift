@@ -84,6 +84,7 @@ final class EditorModel {
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var revealSerial = 0
     @ObservationIgnored private var saving: Set<String> = []
+    @ObservationIgnored private weak var highlighted: EditorDocument?
 
     init(workspace: Workspace, examples: Workspace? = nil, ownReadOnly: Bool = false,
          runner: @escaping () -> SynodRunner?) {
@@ -314,6 +315,21 @@ final class EditorModel {
         guard !doc.isReadOnly else { throw EditorError.readOnly(file) }
         let new = try transform(doc.text)
         doc.replaceText(with: new, actionName: actionName)
+    }
+
+    // MARK: Line highlight (Break it)
+
+    /// Marks `line` of a file in red and shows it (the rule a Break it broke).
+    func highlight(line: Int, inFile file: String, origin: Origin) {
+        clearHighlight()
+        guard let doc = try? open(file: file, origin: origin) else { return }
+        doc.setLineHighlight(line)
+        highlighted = doc
+    }
+
+    func clearHighlight() {
+        highlighted?.setLineHighlight(nil)
+        highlighted = nil
     }
 
     // MARK: Quick fixes

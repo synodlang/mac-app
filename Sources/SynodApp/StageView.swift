@@ -31,6 +31,8 @@ struct StageArea: View {
                 Color.black
             }
             VStack(spacing: 8) {
+                BreakItBanners(model: model)
+                BoxSelectionChip(model: model)
                 if let banner = failureText {
                     BannerView(text: banner, systemImage: "exclamationmark.octagon.fill", tint: .red)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -64,27 +66,5 @@ struct StageArea: View {
         if let f = model.loaded?.status.fault { return "Run failed at \(f.time): \(f.message)" }
         if let f = model.loaded?.status.lookFault { return "Look failed at \(f.time): \(f.message)" }
         return model.banner
-    }
-}
-
-struct PredictPanel: View {
-    @Bindable var model: WorkspaceModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Predict", systemImage: "questionmark.bubble").font(.headline)
-            Text(model.predictQuestion ?? "").font(.title3)
-            TextField("Your answer", text: $model.predictAnswer)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit { model.continuePredict() }
-            HStack {
-                Spacer()
-                Button("Continue") { model.continuePredict() }
-                    .keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: 520)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 }

@@ -87,6 +87,11 @@ struct TimelineTrack: View {
                             .help(t.text.isEmpty ? t.kind : t.text)
                             .onTapGesture { model.seek(to: t.at) }
                     }
+                    ForEach(Array(model.pulseTimes.enumerated()), id: \.offset) { _, t in
+                        PulsingMarker().position(x: model.timeline.fraction(at: t) * w, y: 7)
+                            .help("Your change broke a rule here")
+                            .onTapGesture { model.seek(to: t) }
+                    }
                     Rectangle().fill(Color.primary).frame(width: 2)
                         .offset(x: model.timeline.fraction(at: at) * w - 1)
                 }
@@ -105,5 +110,18 @@ struct TimelineTrack: View {
         case "broken", "failed": return .red
         default: return .gray
         }
+    }
+}
+
+/// A red marker that pulses, for the fact where a Break it broke a rule.
+struct PulsingMarker: View {
+    @State private var on = false
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color.red.opacity(0.35)).frame(width: 18, height: 18).scaleEffect(on ? 1.0 : 0.4).opacity(on ? 0.0 : 0.9)
+            Circle().fill(Color.red).frame(width: 8, height: 8)
+        }
+        .onAppear { withAnimation(.easeOut(duration: 1.0).repeatForever(autoreverses: false)) { on = true } }
     }
 }

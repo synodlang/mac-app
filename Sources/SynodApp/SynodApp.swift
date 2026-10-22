@@ -1,6 +1,8 @@
+import AppKit
 import SwiftUI
 
 struct SynodApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var env = AppEnvironment.shared
 
     private let launchURL = LaunchArguments.workspaceURL

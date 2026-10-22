@@ -14,7 +14,12 @@ struct InspectorContainer: View {
             .padding(8)
             Divider()
             switch model.tab {
-            case .inspector: InspectorView(model: model)
+            case .inspector:
+                if let compare = model.compare {
+                    CompareInspectorView(model: model, compare: compare)
+                } else {
+                    InspectorView(model: model)
+                }
             case .problems: ProblemsView(model: model)
             }
         }
@@ -31,6 +36,8 @@ struct InspectorView: View {
                 nodePicker(run: run, seq: seq)
                 Divider()
                 stateTable(run: run, seq: seq).frame(maxHeight: 240)
+                Divider()
+                BreakItActionsView(model: model)
                 Divider()
                 HStack {
                     Text("Trace").font(.headline)

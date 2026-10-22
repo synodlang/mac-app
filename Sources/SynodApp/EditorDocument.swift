@@ -130,6 +130,9 @@ final class EditorDocument: Identifiable {
     /// A one-line status for the pane (saving, formatted, ...).
     var status: String?
 
+    /// A line marked in red (a rule the last Break it broke); 1-based.
+    private(set) var lineHighlight: Int?
+
     var selection = NSRange(location: 0, length: 0)
     /// Set by the view: moves the text view's selection.
     @ObservationIgnored var selectionSink: ((NSRange) -> Void)?
@@ -269,6 +272,12 @@ final class EditorDocument: Identifiable {
         return true
     }
 
+    func setLineHighlight(_ line: Int?) {
+        guard lineHighlight != line else { return }
+        lineHighlight = line
+        scheduleHighlight()
+    }
+
     func clearCheck() {
         tokens = []
         marks = []
@@ -304,6 +313,9 @@ final class EditorDocument: Identifiable {
     @discardableResult
     func applyHighlight() -> Int {
         let n = EditorHighlighter.apply(tokens: tokens, marks: marks, to: storage)
+        if let l = lineHighlight, let r = positions.utf16LineRange(l), r.length > 0 {
+            storage.addAttribute(.backgroundColor, value: EditorPalette.critical.color.withAlphaComponent(0.16), range: r)
+        }
         onHighlightNeeded?()
         return n
     }

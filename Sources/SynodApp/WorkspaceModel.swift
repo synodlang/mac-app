@@ -61,7 +61,17 @@ final class WorkspaceModel {
 
     var tab: InspectorTab = .inspector
     var inspectorVisible = true
-    var selectedNode: String?
+    /// The node the inspector shows. Clicking a node on the stage, a row in the node list or a
+    /// Compare side sets it; the stage outlines it once the user chose it.
+    var selectedNode: String? {
+        didSet { if oldValue != selectedNode { selectionChanged() } }
+    }
+    /// The node outlined on the stage (the user's pick, not the inspector's default).
+    private(set) var outlinedNode: String?
+    /// A message dot the user clicked (its trace message id), for Break it's "Drop this message".
+    var selectedMessage: Int?
+    /// The nodes inside the box the user dragged on the stage (the Partition side).
+    var boxNodes: [String] = []
     var onlySelectedNode = false
     var source: SourceTarget?
     var editorVisible = true
@@ -70,9 +80,23 @@ final class WorkspaceModel {
     var banner: String?
     var predictEnabled = false
     var predictQuestion: String?
+    /// The choices of the question (empty: the viewer types an answer).
+    var predictChoices: [String] = []
     var predictAnswer = ""
+    /// The choice saved the last time this question was answered.
+    var predictPreviousChoice: Int?
     var showExport = false
+    /// Break it (decisions 85 and 86).
+    @ObservationIgnored let breakIt = BreakItModel()
+    /// Compare (decision 87); nil outside it.
+    var compare: CompareModel?
+    var compareBusy = false
+    var compareError: String?
+    /// Counts the runs put on the stage (caches keyed by run).
+    private(set) var runSerial = 0
+    @ObservationIgnored private var autoSelecting = false
 
+    private var fileRunsHeldUntil: ContinuousClock.Instant?
     private var watcher: FileWatcher?
     private var eventTask: Task<Void, Never>?
     private var watchTask: Task<Void, Never>?
@@ -106,6 +130,8 @@ final class WorkspaceModel {
         coordinator.apply = { [weak self] run, seek, keepTime in
             try await self?.applyToStage(run, seek: seek, keepTime: keepTime)
         }
+        breakIt.host = self
+        WorkspaceRegistry.add(self)
         startEventLoop()
         startWatching()
         if recordRecent { env.addRecent(workspace.root) }
@@ -123,6 +149,8 @@ final class WorkspaceModel {
     }
 
     func stop() {
+        WorkspaceRegistry.remove(self)
+        exitCompare()
         eventTask?.cancel()
         watchTask?.cancel()
         captionTask?.cancel()
@@ -152,6 +180,10 @@ final class WorkspaceModel {
     }
 
     func select(_ item: Item) {
+        exitCompare()
+        breakIt.reset()
+        selectedMessage = nil
+        boxNodes = []
         selection = item
         guard let ws = workspace(for: item.origin) else { return }
         switch item.kind {
@@ -185,7 +217,7 @@ final class WorkspaceModel {
         return t.isEmpty || UInt64(t) != nil
     }
 
-    func run(_ trigger: RunCoordinator.Trigger) {
+    func run(_ trigger: RunCoordinator.Trigger, preserveTime: Bool = false) {
         guard let ws = activeWorkspace, let program = activeProgram, let key = programKey else { return }
         guard let runner = env.runner else {
             stageError = "The synod compiler was not found. Set its path in Settings."
@@ -193,7 +225,8 @@ final class WorkspaceModel {
         }
         guard seedIsValid else { return }
         let pipeline = RunPipeline(workspace: ws, runner: runner)
-        coordinator.trigger(trigger, request: .init(program: program, programKey: key, options: runOptions, runner: pipeline))
+        coordinator.trigger(trigger, request: .init(program: program, programKey: key, options: runOptions, runner: pipeline,
+                                                    preserveTime: preserveTime))
     }
 
     private func applyToStage(_ run: LoadedRun, seek: Double?, keepTime: Bool) async throws {
@@ -203,7 +236,14 @@ final class WorkspaceModel {
         try? await stage.setRate(speed)
         try? await stage.setStopAtPause(predictEnabled)
         timeline = TimelineModel(scene: run.scene)
-        if selectedNode == nil || !run.trace.nodes.contains(selectedNode ?? "") { selectedNode = run.trace.nodes.first }
+        runSerial += 1
+        if selectedNode == nil || !run.trace.nodes.contains(selectedNode ?? "") {
+            autoSelecting = true
+            selectedNode = run.trace.nodes.first
+            autoSelecting = false
+        }
+        if let n = outlinedNode, !run.trace.nodes.contains(n) { outlinedNode = nil }
+        try? await stage.setSelection(outlinedNode)
         banner = nil
         if !keepTime { caption = nil }
     }
@@ -228,6 +268,7 @@ final class WorkspaceModel {
         Task {
             if stage.state.playing { try? await stage.pause() } else {
                 predictQuestion = nil
+                predictChoices = []
                 // Re-assert in the same task as play so no earlier toggle can be lost or reordered.
                 try? await stage.setStopAtPause(predictEnabled)
                 try? await stage.play()
@@ -276,20 +317,38 @@ final class WorkspaceModel {
 
     func setPredict(_ on: Bool) {
         predictEnabled = on
-        if !on { predictQuestion = nil }
+        if !on { predictQuestion = nil; predictChoices = [] }
         guard let stage else { return }
         Task { try? await stage.setStopAtPause(on) }
     }
 
+    /// Text mode (a question without choices): saves the typed answer and plays on.
     func continuePredict() {
-        if let q = predictQuestion, let ws = activeWorkspace, let p = activeProgram {
-            let store = AnswerStore(moduleRoot: ws.root, program: p.relPath)
-            let entry = AnswerStore.Entry(question: q, answer: predictAnswer, seed: loaded?.options.seed,
-                                          mode: mode.rawValue)
-            try? store.save(entry)
-        }
+        savePredict(answer: predictAnswer, choice: nil)
+        resumeAfterPredict()
+    }
+
+    /// Choice mode: saves the pick (its index and the list, `answer` is the chosen text) and plays on.
+    /// Nothing is graded; the run shows what happens.
+    func choosePredict(_ index: Int) {
+        guard predictChoices.indices.contains(index) else { return }
+        savePredict(answer: predictChoices[index], choice: index)
+        resumeAfterPredict()
+    }
+
+    private func savePredict(answer: String, choice: Int?) {
+        guard let q = predictQuestion, let ws = activeWorkspace, let p = activeProgram else { return }
+        let store = AnswerStore(moduleRoot: ws.root, program: p.relPath)
+        let entry = AnswerStore.Entry(question: q, answer: answer, seed: loaded?.options.seed, mode: mode.rawValue,
+                                      choice: choice, choices: choice == nil ? nil : predictChoices)
+        try? store.save(entry)
+    }
+
+    private func resumeAfterPredict() {
         predictQuestion = nil
+        predictChoices = []
         predictAnswer = ""
+        predictPreviousChoice = nil
         guard let stage else { return }
         Task {
             try? await stage.setStopAtPause(predictEnabled)
@@ -309,11 +368,18 @@ final class WorkspaceModel {
     }
 
     private func handle(_ ev: PlayerEvent) {
-        if let q = predict.handle(ev, predictEnabled: predictEnabled) {
-            predictQuestion = q
-            predictAnswer = AnswerStore(moduleRoot: workspace.root, program: activeProgram?.relPath ?? ".").entry(for: q)?.answer ?? ""
+        if compare == nil, let q = predict.handle(ev, predictEnabled: predictEnabled) {
+            let saved = AnswerStore(moduleRoot: workspace.root, program: activeProgram?.relPath ?? ".").entry(for: q.text)
+            predictQuestion = q.text
+            predictChoices = q.choices
+            predictAnswer = q.choices.isEmpty ? (saved?.answer ?? "") : ""
+            predictPreviousChoice = q.choices.isEmpty ? nil : saved?.choice.flatMap { q.choices.indices.contains($0) ? $0 : nil }
         }
         switch ev {
+        case .click(_, _, let hit):
+            stageClicked(hit)
+        case .box(let rect, _):
+            stageBox(rect)
         case .marker(let kind, _, let text, _):
             switch kind {
             case "caption":
@@ -333,6 +399,62 @@ final class WorkspaceModel {
         }
     }
 
+    /// Presentation times of the rules the last Break it broke (the timeline pulses there).
+    var pulseTimes: [Double] { breakIt.broken.compactMap { loaded?.trace.timeOfSeq($0.seq) } }
+
+    // MARK: Stage selection (decision 84)
+
+    private func selectionChanged() {
+        if !autoSelecting { outlinedNode = selectedNode }
+        let node = outlinedNode
+        if let compare {
+            Task { try? await compare.controller.setSelection(node) }
+        } else if let stage {
+            Task { try? await stage.setSelection(node) }
+        }
+    }
+
+    /// A click on the stage: a message dot jumps to its `net.Sent` fact, a node selects it in the
+    /// inspector, and empty space clears the message and box selection.
+    func stageClicked(_ hit: StageHit?) {
+        boxNodes = []
+        guard let hit else { selectedMessage = nil; return }
+        if let id = hit.msg {
+            selectedMessage = id
+            tab = .inspector
+            inspectorVisible = true
+            if let seq = sendSeq(ofMessage: id) { jump(toSeq: seq) }
+        } else if let node = hit.node {
+            selectedMessage = nil
+            selectedNode = node
+            outlinedNode = node
+            tab = .inspector
+            inspectorVisible = true
+            if let stage { Task { try? await stage.setSelection(node) } }
+        }
+    }
+
+    /// A dragged box: the nodes whose box center lies inside it are the Partition side.
+    func stageBox(_ rect: StageRect) {
+        guard let stage else { return }
+        Task {
+            let boxes = (try? await stage.nodeBounds()) ?? []
+            let inside = BreakItSelection.nodes(inBox: rect, boxes: boxes)
+            boxNodes = inside
+            selectedMessage = nil
+            if !inside.isEmpty { tab = .inspector; inspectorVisible = true }
+        }
+    }
+
+    /// The seq of the `net.Sent` of message `id` in the shown run.
+    func sendSeq(ofMessage id: Int) -> Int? {
+        guard let run = loaded else { return nil }
+        for e in run.trace.events {
+            if case .sent(let env) = e.payload, env.msg.id == id { return e.seq }
+        }
+        return nil
+    }
+
     // MARK: Watching
 
     private func startWatching() {
@@ -344,10 +466,15 @@ final class WorkspaceModel {
                 guard let self else { return }
                 self.scan = self.workspace.scan()
                 self.editor.diskChanged()
-                if self.selection?.origin == .own { self.run(.fileChange) }
+                if self.selection?.origin == .own, !self.fileRunsAreHeld { self.run(.fileChange) }
             }
         }
     }
+
+    /// Break it saves and runs the program itself; the run its own save would start is not needed.
+    func holdFileRuns(for d: Duration) { fileRunsHeldUntil = .now + d }
+
+    private var fileRunsAreHeld: Bool { fileRunsHeldUntil.map { ContinuousClock.now < $0 } ?? false }
 
     // MARK: Sources and problems
 

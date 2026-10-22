@@ -201,7 +201,7 @@ enum StageCheck {
             if seen.isEmpty { fail("no pause marker event before the halt") }
             var predict = PredictLogic()
             var question: String?
-            for ev in log.events { question = predict.handle(ev, predictEnabled: true) ?? question }
+            for ev in log.events { question = predict.handle(ev, predictEnabled: true)?.text ?? question }
             r.question = question
             if question == nil { fail("predict logic produced no question") }
             else if question != marker.text { fail("question \(question ?? "") != marker text \(marker.text)") }

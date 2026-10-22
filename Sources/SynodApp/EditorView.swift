@@ -76,6 +76,10 @@ final class EditorGutter: NSRulerView {
                 .font: self.numberFont, .foregroundColor: EditorPalette.quiet.color])
             let size = label.size()
             label.draw(at: NSPoint(x: self.ruleThickness - size.width - 8, y: top + (lineHeight - size.height) / 2))
+            if doc.lineHighlight == line {
+                EditorPalette.critical.color.setFill()
+                NSRect(x: 0, y: top, width: 3, height: lineHeight).fill()
+            }
             if let kind = severity[line] {
                 let color = kind == .error ? EditorPalette.critical.color : EditorPalette.warning.color
                 color.setFill()

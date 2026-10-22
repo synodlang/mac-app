@@ -26,8 +26,15 @@ struct ProblemRow: Identifiable, Equatable {
         return "\(file):\(line):\(col)"
     }
 
-    static func rows(report: CheckReport?, status: RunStatus?, raw: String?, error: String?) -> [ProblemRow] {
+    static func rows(report: CheckReport?, status: RunStatus?, raw: String?, error: String?,
+                     breakItBroken: [BrokenFact] = []) -> [ProblemRow] {
         var rows: [ProblemRow] = []
+        for (i, b) in breakItBroken.enumerated() {
+            rows.append(ProblemRow(
+                id: "breakit\(i)", severity: .error, code: "break-it",
+                message: "Your change broke: \(b.rule) at \(SimTime(microseconds: b.time))",
+                file: b.location?.file, line: b.location?.line, col: b.location == nil ? nil : 1))
+        }
         if let error { rows.append(ProblemRow(id: "error", severity: .error, code: "", message: error)) }
         if let report {
             for (i, d) in report.diagnostics.enumerated() {
@@ -67,7 +74,8 @@ struct ProblemsView: View {
 
     var body: some View {
         let rows = ProblemRow.rows(report: model.problemReport, status: model.loaded?.status,
-                                   raw: model.coordinator.rawProblems, error: model.coordinator.errorMessage)
+                                   raw: model.coordinator.rawProblems, error: model.coordinator.errorMessage,
+                                   breakItBroken: model.breakIt.broken)
         if rows.isEmpty {
             ContentUnavailableView("No problems", systemImage: "checkmark.circle", description: Text("The last run was clean."))
         } else {

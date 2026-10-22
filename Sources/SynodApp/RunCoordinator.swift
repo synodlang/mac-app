@@ -31,6 +31,9 @@ final class RunCoordinator {
         var programKey: String
         var options: RunOptions
         var runner: any ProgramRunning
+        /// Keep the stage at the same presentation time instead of mapping the current fact onto the
+        /// new trace (Break it: the new events shift the fact numbers).
+        var preserveTime = false
     }
 
     /// Quiet time before a file change starts a run.
@@ -73,6 +76,15 @@ final class RunCoordinator {
         }
     }
 
+    /// Returns when no run is scheduled or in flight (a newer trigger replaces the one waited on).
+    func settled() async {
+        var last: Task<Void, Never>?
+        while let t = task, t != last {
+            last = t
+            await t.value
+        }
+    }
+
     func cancel() {
         generation += 1
         task?.cancel()
@@ -100,7 +112,8 @@ final class RunCoordinator {
             let run = LoadedRun(programKey: request.programKey, sceneText: sceneText, scene: scene, trace: trace,
                                 status: status, options: request.options)
             let sameProgram = loaded?.programKey == request.programKey
-            let seek = Self.seekTarget(previous: loaded, seq: currentSeq(), newProgramKey: request.programKey, newTrace: trace)
+            let seek = request.preserveTime ? nil
+                : Self.seekTarget(previous: loaded, seq: currentSeq(), newProgramKey: request.programKey, newTrace: trace)
             do {
                 try await apply(run, seek, sameProgram)
             } catch {

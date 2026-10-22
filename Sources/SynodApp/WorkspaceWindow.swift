@@ -53,17 +53,13 @@ struct WorkspaceView: View {
                 }
                 if model.editorVisible {
                     VSplitView {
-                        VStack(spacing: 0) {
-                            StageArea(model: model)
-                            TimelineBar(model: model)
-                        }
-                        .frame(minHeight: 340)
+                        StageColumn(model: model)
+                            .frame(minHeight: 340)
                         EditorPane(model: model)
                             .frame(minHeight: 150, idealHeight: 260)
                     }
                 } else {
-                    StageArea(model: model)
-                    TimelineBar(model: model)
+                    StageColumn(model: model)
                 }
             }
         }
@@ -76,8 +72,28 @@ struct WorkspaceView: View {
         .toolbar { WorkspaceToolbar(model: model) }
         .focusedSceneValue(\.workspaceModel, model)
         .sheet(isPresented: $model.showExport) { ExportSheet(model: model) }
+        .sheet(isPresented: Binding(get: { model.breakIt.sheet != nil }, set: { if !$0 { model.breakIt.cancelSheet() } })) {
+            BreakItSheet(model: model)
+        }
+        .background(UnsavedWindowGuard(model: model))
         .onChange(of: model.copiedTo) { _, url in
             if let url { openWindow(value: url) }
+        }
+    }
+}
+
+/// The stage and the timeline, or the two stages of Compare.
+struct StageColumn: View {
+    @Bindable var model: WorkspaceModel
+
+    var body: some View {
+        if let compare = model.compare {
+            CompareArea(model: model, compare: compare)
+        } else {
+            VStack(spacing: 0) {
+                StageArea(model: model)
+                TimelineBar(model: model)
+            }
         }
     }
 }
@@ -125,10 +141,28 @@ struct WorkspaceToolbar: ToolbarContent {
                 Label("Predict", systemImage: "questionmark.bubble")
             }
             .toggleStyle(.button)
+            .disabled(model.compare != nil)
             .help("Stop at questions and ask for your answer")
+            Menu {
+                if model.compare != nil {
+                    Button("Exit Compare") { model.exitCompare() }
+                    Divider()
+                }
+                Button("Next seed") { model.startCompare(.nextSeed) }
+                Button(model.mode == .ordered ? "Proportional mode" : "Ordered mode") { model.startCompare(.otherMode) }
+                Menu("Another program") {
+                    ForEach(model.scan.programs, id: \.relPath) { p in
+                        Button(p.relPath) { model.startCompare(.program(p)) }
+                    }
+                }
+                Button("With before Break it") { model.startCompare(.beforeBreakIt) }
+                    .disabled(model.breakIt.before == nil)
+            } label: { Label(model.compareBusy ? "Comparing…" : "Compare", systemImage: "rectangle.split.2x1") }
+                .disabled(!model.canCompare || model.compareBusy)
+                .help("Run another seed, mode or program and watch both side by side")
             Button { model.showExport = true } label: { Label("Export", systemImage: "square.and.arrow.up") }
-                .disabled(model.loaded == nil)
-                .help("Export a video")
+                .disabled(model.loaded == nil || model.compare != nil)
+                .help("Export a video or a GIF")
             Button { model.editorVisible.toggle() } label: { Label("Editor", systemImage: "square.and.pencil") }
                 .help("Show or hide the editor (⌥⌘E)")
             Button { model.inspectorVisible.toggle() } label: { Label("Inspector", systemImage: "sidebar.trailing") }
