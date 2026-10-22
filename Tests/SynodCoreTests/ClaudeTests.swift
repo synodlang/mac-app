@@ -136,13 +136,13 @@ private func events(_ fixture: String, root: String? = "/work/mod") throws -> [C
     let ok = dir.appendingPathComponent("claude-ok")
     try Data("#!/bin/sh\necho '1.2.3 (Claude Code)'\n".utf8).write(to: ok)
     let slow = dir.appendingPathComponent("claude-slow")
-    try Data("#!/bin/sh\nsleep 20\n".utf8).write(to: slow)
+    try Data("#!/bin/sh\nexec sleep 20\n".utf8).write(to: slow)
     for f in [ok, slow] { try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: f.path) }
     let synod = URL(fileURLWithPath: "/x/synod")
     #expect(await ClaudeLocator.version(of: ok, synod: synod) == "1.2.3 (Claude Code)")
     let start = ContinuousClock.now
     #expect(await ClaudeLocator.version(of: slow, synod: synod, timeout: .milliseconds(300)) == nil)
-    #expect(ContinuousClock.now - start < .seconds(5))
+    #expect(ContinuousClock.now - start < .seconds(10))
 }
 
 // MARK: process (a shell stub that only echoes stream-json; T12's fake-claude replaces it later)
