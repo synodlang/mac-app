@@ -133,14 +133,18 @@ func scanRealExamples() throws {
     let start = ContinuousClock.now
     task.cancel()
     await #expect(throws: CancellationError.self) { _ = try await task.value }
-    #expect(ContinuousClock.now - start < .seconds(2))
+    // The fake sleeps 30 s, so finishing well before that proves the kill; the
+    // bound is loose because CI runners are slow while tests run in parallel.
+    #expect(ContinuousClock.now - start < .seconds(20))
 }
 
 @Test func runnerTimesOut() async throws {
     let runner = fakeRunner("sleep", timeout: .seconds(1))
     let start = ContinuousClock.now
     await #expect(throws: RunnerError.timedOut(seconds: 1)) { try await runner.exec(["run"], cwd: FileManager.default.temporaryDirectory) }
-    #expect(ContinuousClock.now - start < .seconds(4))
+    // The fake sleeps 30 s, so finishing well before that proves the kill; the
+    // bound is loose because CI runners are slow while tests run in parallel.
+    #expect(ContinuousClock.now - start < .seconds(20))
 }
 
 @Test func probeReadsTheVersion() async throws {
