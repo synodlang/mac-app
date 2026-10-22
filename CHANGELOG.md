@@ -32,6 +32,10 @@ Implements Synod 0.2.
 - Predict stops reliably at each question, including at the end of playback and after a seek.
 - `Synod <folder>` opens that folder as the workspace.
 - The app never resolves its own executable as the compiler.
+- `Synod <folder>` and `open Synod.app --args <folder>` open the workspace on every launch, also after quitting with a window open; a Dock click with no windows shows Welcome.
+- Editor text starts beside the line-number gutter instead of under it.
+- Break it uses the current program's run for its default time, which stays inside the run, and shows any error in its sheet; banners sit above the stage instead of covering it.
+- The unsaved-changes prompt stays attached when the window is replaced.
 
 ## v0.2.0 — 2026-10-22
 
