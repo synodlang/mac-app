@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import SynodCore
+import SwiftUI
 import SynodWeb
 
 /// `--editor-check <module> [--report f]`: the editor on a temporary copy of the module. Tokens
@@ -49,6 +50,7 @@ enum HeadlessEditor {
         }
         var checks: [Check] = []
         checks.append(await tokenCheck(copy: copy, runner: runner))
+        checks.append(await renderCheck(copy: copy, runner: runner))
         checks.append(await flowCheck(copy: copy, reference: reference, runner: runner, synod: tools.synod))
         for c in checks {
             h.note("\(c.ok ? "ok  " : "FAIL") editor-check \(c.name)  \(c.metrics.sorted { $0.key < $1.key }.map { "\($0.key) \(format($0.value))" }.joined(separator: "  "))\(c.failures.isEmpty ? "" : "  " + c.failures.joined(separator: "; "))")
@@ -169,6 +171,103 @@ enum HeadlessEditor {
         }
         c.ok = c.failures.isEmpty
         return c
+    }
+
+    // MARK: Rendering
+
+    /// The editor view, hosted in an offscreen window, is drawn into a bitmap in both appearances:
+    /// the text area (right of the gutter) must hold glyph pixels in several distinct colors.
+    @MainActor
+    static func renderCheck(copy: URL, runner: SynodRunner) async -> Check {
+        var c = Check(name: "editor rendering")
+        func fail(_ m: String) { if c.failures.count < 8 { c.failures.append(m) } }
+        do {
+            let ws = try Workspace.open(copy)
+            let editor = EditorModel(workspace: ws, runner: { runner })
+            try editor.show(file: "raft/demo.synod")
+            guard let doc = editor.current else { fail("no document"); return c }
+            await editor.checkNow()
+            // A diagnostic underline too: break the buffer so an error mark exists.
+            try await editor.applyEdit(file: "raft/demo.synod") { $0.replacingOccurrences(of: "(item 0 of raft.Leaders)", with: "(item 0 of raft.Leaders") }
+            _ = await wait(3) { doc.isChecked && doc.marks.contains { $0.kind == .error } }
+            doc.applyHighlight()
+            let model = WorkspaceModel(workspace: ws, recordRecent: false)
+            defer { model.stop() }
+            try model.editor.show(file: "raft/demo.synod")
+            guard let hostedDoc = model.editor.current else { fail("no hosted document"); return c }
+            await model.editor.checkNow()
+            try await model.editor.applyEdit(file: "raft/demo.synod") { $0.replacingOccurrences(of: "(item 0 of raft.Leaders)", with: "(item 0 of raft.Leaders") }
+            _ = await wait(3) { hostedDoc.isChecked && hostedDoc.marks.contains { $0.kind == .error } }
+            // Two hosts: the bare scroll view, and the SwiftUI pane as the app shows it.
+            for hosted in [false, true] {
+                let win = NSWindow(contentRect: CGRect(x: -10000, y: -10000, width: 900, height: 520), styleMask: [.titled], backing: .buffered, defer: false)
+                win.isReleasedWhenClosed = false
+                if hosted {
+                    win.contentView = NSHostingView(rootView: EditorPane(model: model))
+                } else {
+                    win.contentView = EditorTextView.build(model: editor, document: doc, coordinator: EditorTextView.Coordinator(model: editor, document: doc))
+                }
+                win.orderFrontRegardless()
+                defer { win.close() }
+                for dark in [false, true] {
+                    let name = (hosted ? "hosted-" : "") + (dark ? "dark" : "light")
+                    win.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                    (hosted ? hostedDoc : doc).applyHighlight()
+                    try? await Task.sleep(for: .milliseconds(400))
+                    win.contentView?.layoutSubtreeIfNeeded()
+                    guard let tv = findTextView(in: win.contentView!) else { fail("\(name): no text view"); continue }
+                    if let sc = tv.enclosingScrollView { trace("\(name) scroll \(sc.frame) content \(sc.contentView.frame) tv \(tv.frame) ruler \(String(describing: sc.verticalRulerView?.frame)) thick \(String(describing: sc.verticalRulerView?.ruleThickness))") }
+                    tv.layoutSubtreeIfNeeded()
+                    win.displayIfNeeded()
+                    tv.enclosingScrollView?.tile()
+                    // The whole view, gutter and all, as the window composes it: the text must
+                    // survive what is drawn over it. Only the area right of the gutter counts.
+                    guard let whole = win.contentView, let rep = whole.bitmapImageRepForCachingDisplay(in: whole.bounds) else { fail("\(name): no bitmap"); continue }
+                    whole.cacheDisplay(in: whole.bounds, to: rep)
+                    let scale = CGFloat(rep.pixelsWide) / whole.bounds.width
+                    let firstColumn = Int((tv.enclosingScrollView?.verticalRulerView?.ruleThickness ?? 46) * scale) + Int(8 * scale)
+                    let bg = EditorPalette.paper.color(dark: dark).usingColorSpace(.sRGB)!
+                    var glyph = 0
+                    var buckets = [UInt32: Int]()
+                    for y in 0..<rep.pixelsHigh {
+                        for x in firstColumn..<rep.pixelsWide {
+                            guard let px = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                            let d = abs(px.redComponent - bg.redComponent) + abs(px.greenComponent - bg.greenComponent) + abs(px.blueComponent - bg.blueComponent)
+                            if d > 0.5 {
+                                glyph += 1
+                                let q = (UInt32(px.redComponent * 7) << 8) | (UInt32(px.greenComponent * 7) << 4) | UInt32(px.blueComponent * 7)
+                                buckets[q, default: 0] += 1
+                            }
+                        }
+                    }
+                    // Colors that carry a real share of the glyph pixels, not antialiasing blends.
+                    let distinct = buckets.values.filter { $0 >= max(20, glyph / 200) }.count
+                    c.metrics["\(name)GlyphPixels"] = Double(glyph)
+                    c.metrics["\(name)Colors"] = Double(distinct)
+                    if glyph < 500 { fail("\(name): only \(glyph) glyph pixels in the text area") }
+                    if distinct < 4 { fail("\(name): only \(distinct) distinct text colors") }
+                    if let dir = ProcessInfo.processInfo.environment["SYNOD_EDITOR_PNG"], let whole = win.contentView,
+                       let wrep = whole.bitmapImageRepForCachingDisplay(in: whole.bounds) {
+                        whole.cacheDisplay(in: whole.bounds, to: wrep)
+                        try? wrep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: dir).appendingPathComponent("pane-\(name).png"))
+                    }
+                    if let dir = ProcessInfo.processInfo.environment["SYNOD_EDITOR_PNG"], let png = rep.representation(using: .png, properties: [:]) {
+                        try? png.write(to: URL(fileURLWithPath: dir).appendingPathComponent("editor-\(name).png"))
+                    }
+                }
+            }
+        } catch {
+            fail(error.localizedDescription)
+        }
+        c.ok = c.failures.isEmpty
+        return c
+    }
+
+    @MainActor
+    static func findTextView(in view: NSView) -> NSTextView? {
+        if let tv = view as? SynodTextView { return tv }
+        for v in view.subviews { if let t = findTextView(in: v) { return t } }
+        return nil
     }
 
     static func size(_ url: URL) -> Int {

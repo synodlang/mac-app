@@ -51,7 +51,7 @@ final class EditorGutter: NSRulerView {
         guard let tv = clientView as? NSTextView, let lm = tv.textLayoutManager,
               let cs = tv.textContentStorage, let doc = document else { return }
         EditorPalette.paper.color.blended(withFraction: 0.06, of: EditorPalette.ink.color)?.setFill()
-        rect.fill()
+        NSRect(x: 0, y: rect.minY, width: ruleThickness, height: rect.height).fill()
         let visible = tv.visibleRect
         let inset = tv.textContainerOrigin.y
         let positions = doc.positions
@@ -125,9 +125,14 @@ struct EditorTextView: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(model: model, document: document) }
 
     func makeNSView(context: Context) -> NSScrollView {
+        Self.build(model: model, document: document, coordinator: context.coordinator)
+    }
+
+    /// The scroll view with text view and gutter; also what the headless render check hosts.
+    static func build(model: EditorModel, document: EditorDocument, coordinator: Coordinator) -> NSScrollView {
         let tv = SynodTextView(usingTextLayoutManager: true)
         tv.textContentStorage?.textStorage = document.storage
-        tv.delegate = context.coordinator
+        tv.delegate = coordinator
         tv.allowsUndo = true
         tv.isRichText = true
         tv.importsGraphics = false
@@ -171,7 +176,7 @@ struct EditorTextView: NSViewRepresentable {
         scroll.rulersVisible = true
         scroll.contentView.postsBoundsChangedNotifications = true
 
-        context.coordinator.attach(textView: tv, gutter: gutter, scroll: scroll)
+        coordinator.attach(textView: tv, gutter: gutter, scroll: scroll)
         document.scheduleHighlight()
         return scroll
     }
