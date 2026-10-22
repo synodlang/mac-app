@@ -75,6 +75,10 @@ jobs:
         run: scripts/bundle.sh
       - name: Verify signature
         run: codesign --verify --deep --strict build/Synod.app
+      - name: Verify the bundle has the bridge and the skills
+        run: |
+          codesign --verify --strict build/Synod.app/Contents/Helpers/synod-editor-mcp
+          test -f build/Synod.app/Contents/Resources/agent-skills/skills/synod/SKILL.md
       - name: Smoke test (every example plays)
         run: scripts/smoke.sh build/Synod.app smoke.json
       - name: M9 acceptance, tcp only (pull requests, short run)
@@ -86,6 +90,19 @@ jobs:
           name: acceptance-m9-quick
           path: acc-m9-quick
           if-no-files-found: ignore
+      # Completion, the prompt bar against the fake claude and the editor MCP server, then M9 quick.
+      - name: M10 headless checks (pull requests, quick)
+        if: github.event_name == 'pull_request'
+        run: scripts/acceptance-m10.sh build/Synod.app acc-m10-quick --quick
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: acceptance-m10-quick
+          path: acc-m10-quick
+          if-no-files-found: ignore
+      - name: M10 headless checks (main and tags)
+        if: github.event_name != 'pull_request'
+        run: scripts/acceptance-m10.sh build/Synod.app acc-m10-checks --quick
       - name: Package app
         run: |
           mkdir -p dist
@@ -122,4 +139,14 @@ jobs:
         with:
           name: acceptance-m9
           path: acc-m9
+          if-no-files-found: ignore
+      # The M10 headless acceptance in full: completion, prompt bar with the fake claude, editor MCP
+      # server, then M9 again. Writes report-m10.json.
+      - name: M10 acceptance
+        run: scripts/acceptance-m10.sh build/Synod.app acc-m10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-m10
+          path: acc-m10
           if-no-files-found: ignore

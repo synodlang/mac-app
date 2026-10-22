@@ -7,7 +7,7 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.2.1.** The Mac app implements Synod 0.2 and adds the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.5), the player (v0.2.1) and the examples (v0.2.1), so it works offline.
+**v0.2.2.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.6), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.0), so it works offline.
 
 What works:
 
@@ -21,10 +21,13 @@ What works:
 - Click a node or a message on the stage to select it and see its state in the inspector.
 - Export video as H.264 or HEVC at 1080p or 4K and 30 or 60 fps, or as an animated GIF.
 - Inspect nodes: exported state at the current fact, the fields that just changed, and the trace around it; read problems from `synod check` and failed runs.
+- Phrase completion: type a few letters of a phrase (or press ⌃Space) and pick `net.Send m from a to b` from a popup built from `synod doc --json --scope`; the holes become placeholders you fill with Tab.
+- A prompt bar (⌘K), off until you turn it on in Settings › Claude, that asks your own Claude Code to write or change Synod source in your workspace, with live progress, Stop, a changed-files banner and Revert.
+- An editor MCP server for Claude Code, so edits arrive in your open buffers as "Claude Edit" undo steps; Settings › Claude can also give an external Terminal session the same tools.
 - A proper app icon.
-- Headless modes: `--smoke`, `--export` (mp4 or gif), `--acceptance` (a Raft 1080p60 export compared with the stage player) and `--m9` (the whole M9 acceptance), plus a check per feature (`--editor-check`, `--predict-check`, `--hit-check`, `--breakit-check`, `--compare-check`, `--gif-check`).
+- Headless modes: `--smoke`, `--export` (mp4 or gif), `--acceptance` (a Raft 1080p60 export compared with the stage player) and `--m9` (the whole M9 acceptance), `--m10` (the M10 headless acceptance), plus a check per feature (`--editor-check`, `--predict-check`, `--hit-check`, `--breakit-check`, `--compare-check`, `--gif-check`, `--completion-check`, `--claude-check`, `--mcp-check`).
 
-Still to come in M10: phrase completion and the Claude integration. Everything below the install and build sections is the plan from [06-mac-app.md](https://github.com/synodlang/dsl/blob/main/implementation/06-mac-app.md) and [07-claude-integration.md](https://github.com/synodlang/dsl/blob/main/implementation/07-claude-integration.md); the roadmap is in [10-roadmap.md](https://github.com/synodlang/dsl/blob/main/implementation/10-roadmap.md).
+Everything below the install and build sections is the plan from [06-mac-app.md](https://github.com/synodlang/dsl/blob/main/implementation/06-mac-app.md) and [07-claude-integration.md](https://github.com/synodlang/dsl/blob/main/implementation/07-claude-integration.md); the roadmap is in [10-roadmap.md](https://github.com/synodlang/dsl/blob/main/implementation/10-roadmap.md).
 
 ## Install
 
@@ -48,16 +51,18 @@ A Homebrew cask and Developer ID notarization may follow.
 You need macOS 15 or later and Xcode 27 (Swift 6.2 tools or newer). There is no Xcode project; the app is a Swift package.
 
 ```sh
-scripts/fetch-deps.sh   # downloads and verifies the pinned synod, player and examples into .deps/
+scripts/fetch-deps.sh   # downloads and verifies the pinned synod, player, examples and agent-skills into .deps/
 swift build
 swift test
 scripts/bundle.sh       # builds build/Synod.app (universal, ad-hoc signed)
 scripts/smoke.sh        # plays every bundled example headlessly (needs a GUI session)
 scripts/acceptance.sh   # Raft 1080p60 export check, about 5 minutes (add --quick for a short tcp run)
 scripts/acceptance-m9.sh # the whole M9 acceptance and the M8 one, writes acc-m9/report-m9.json (--quick for tcp only)
+scripts/acceptance-m10.sh # completion, the prompt bar with a fake claude, the editor MCP server, then M9; writes acc-m10/report-m10.json
+scripts/acceptance-m10-live.sh # your own Claude Code login and network: runs the live prompt-bar check (run it yourself)
 ```
 
-`deps.env` pins the bundled `synod` release, player release and examples commit, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.1` prints the CHANGELOG section used as release notes.
+`deps.env` pins the bundled `synod` release, player release, examples commit and agent-skills release, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.2` prints the CHANGELOG section used as release notes.
 
 ## Where it fits
 
@@ -72,12 +77,12 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 | Repository | What it is | Status |
 | --- | --- | --- |
 | [dsl](https://github.com/synodlang/dsl) | The language specification and implementation guides | Spec v0.2 |
-| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run` | v0.2.5 released |
+| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run`, `doc`, `explain`, `mcp` | v0.2.6 released |
 | [std](https://github.com/synodlang/std) | The standard library packages | In use by the compiler |
 | [examples](https://github.com/synodlang/examples) | Sample programs and acceptance tests | Available |
 | [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.1 released |
-| **mac-app** (this repository) | The Mac app | v0.2.1 (M9); M10 planned |
-| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | Planned (M10) |
+| **mac-app** (this repository) | The Mac app | v0.2.2 (M10) |
+| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.0 released |
 | [synodlang.github.io](https://github.com/synodlang/synodlang.github.io) | The website and documentation | Install page live; rest planned (M11) |
 | [homebrew-tap](https://github.com/synodlang/homebrew-tap) | Homebrew formula for `synod` | Updated by compiler releases |
 | [scoop-bucket](https://github.com/synodlang/scoop-bucket) | Scoop manifest for `synod` | Updated by compiler releases |
@@ -88,8 +93,8 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 - macOS 15 or later.
 - Apple silicon first.
 - Written in Swift with SwiftUI.
-- Offline first: everything except "Ask Claude" works without a network.
-- "Ask Claude" needs the Claude Code CLI on your machine.
+- Offline first: everything except the Claude prompt bar works without a network.
+- The prompt bar needs the Claude Code CLI on your machine, signed in with your own account.
 
 ## The planned window
 
@@ -112,9 +117,17 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 - **Break it.** Click a node to crash or restart it. Click a message dot to drop that message. Drag a box around nodes to partition them. Each action inserts a line into the program's `define main` at the current simulated time, formats the file and re-runs. No language model is involved. Invariants that break are highlighted where they broke.
 - **Compare.** Two programs, or one program with two seeds, side by side on a shared timeline. Shapes are matched by id.
 
-## Claude integration
+## Claude and privacy
 
-The app has a prompt bar, for example "animate Raft with 5 nodes and a leader crash". It runs the Claude Code CLI on your machine, with the workspace as the working directory, the `synod` skill from [agent-skills](https://github.com/synodlang/agent-skills) and a short list of allowed tools (`Read`, `Write`, `Edit`, and `synod check`, `run` and `doc`). Claude reuses existing packages first, verifies with `synod check`, runs the program and stops. The app streams progress into the prompt bar and plays the result.
+The app has a prompt bar (⌘K), for example "animate Raft with 5 nodes and a leader crash". It is **opt-in**: it stays off until you turn it on in Settings › Claude, and it uses **your own Claude Code** installation and login.
+
+- **No keys stored.** Your request and the files Claude reads go to Anthropic under your Claude Code account, as they would in Terminal. The app never asks for, reads or stores an API key or a login. It starts your `claude` command as a subprocess and passes it a short environment (`HOME`, `PATH` and a few locale variables), not yours.
+- **No network listener.** Claude reaches the open editor through a Unix socket in a private temporary folder, protected by a per-session token. The app opens no TCP or HTTP port. The socket, its folder and the config file are removed when the request ends.
+- **External Terminal access is off at every launch.** If you turn it on in Settings › Claude, a `claude` you start yourself in Terminal can use the same editor tools, until you click Disconnect or quit the app. The setting is never saved.
+- **Logs never hold text.** The app logs a tool name, a path and byte counts, never the contents of your files or prompts.
+- **Revert.** Before each request the app snapshots your workspace. Claude edits your open buffers as "Claude Edit" undo steps, a banner lists what changed, and Revert restores every file byte for byte and removes added files.
+
+Claude gets the `synod` skill from [agent-skills](https://github.com/synodlang/agent-skills) and a short list of allowed tools: `Read`, `Glob` and `Grep`, the editor tools (`mcp__synod-editor__*`), the `synod mcp` tools `doc`, `explain`, `check` and `run_summary`, and `synod get`. It has no `Write` or `Edit` tool. It reuses existing packages first, verifies with `synod check`, runs the program and stops. The app streams progress into the prompt bar and plays the result.
 
 "Explain this run" sends `synod run --summary` and asks for `lesson.Note` lines, so captions come from the simulator and cannot invent behaviour. The result is plain Synod source that you own. The language never depends on Claude: you can write, check, run and animate Synod without it.
 

@@ -35,6 +35,11 @@ jobs:
         run: swift test
       - name: Bundle
         run: scripts/bundle.sh --version "${GITHUB_REF_NAME#v}"
+      - name: Verify the bundle has the bridge and the skills
+        run: |
+          codesign --verify --deep --strict build/Synod.app
+          codesign --verify --strict build/Synod.app/Contents/Helpers/synod-editor-mcp
+          test -f build/Synod.app/Contents/Resources/agent-skills/skills/synod/SKILL.md
       - name: Smoke test
         run: scripts/smoke.sh build/Synod.app smoke.json
       # M9 acceptance, which also runs the M8 smoke test and the Raft 1080p60 video acceptance.
@@ -47,14 +52,24 @@ jobs:
           name: acceptance-m9
           path: acc-m9
           if-no-files-found: ignore
+      # M10 acceptance: completion, prompt bar with the fake claude, editor MCP server (and M9 again).
+      # The live Claude check is run by the owner with scripts/acceptance-m10-live.sh.
+      - name: M10 acceptance
+        run: scripts/acceptance-m10.sh build/Synod.app acc-m10 --quick
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-m10
+          path: acc-m10
+          if-no-files-found: ignore
       - name: Package
         run: |
           source deps.env
           mkdir -p dist
           ditto -c -k --keepParent build/Synod.app "dist/Synod-${GITHUB_REF_NAME}-macos.zip"
           (cd dist && shasum -a 256 Synod-*.zip > SHA256SUMS)
-          printf '\nBundles synod %s, player %s, examples %s (%s).\n' \
-            "$SYNOD_VERSION" "$PLAYER_VERSION" "$EXAMPLES_VERSION" "$EXAMPLES_COMMIT" >> notes.md
+          printf '\nBundles synod %s, player %s, examples %s (%s) and agent-skills %s.\n' \
+            "$SYNOD_VERSION" "$PLAYER_VERSION" "$EXAMPLES_VERSION" "$EXAMPLES_COMMIT" "$AGENT_SKILLS_VERSION" >> notes.md
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}

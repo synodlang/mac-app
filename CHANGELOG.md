@@ -4,6 +4,23 @@ All notable changes to the Synod Mac app. Every `synodlang` repository shares MA
 
 ## Unreleased
 
+## v0.2.2 — 2026-10-22
+
+Implements Synod 0.2.
+
+### Added
+
+- Phrase completion: a popup of phrases from `synod doc --json --scope` as you type or with ⌃Space, inserting `net.Send m from a to b` with placeholders you move through with Tab.
+- Prompt bar (⌘K), opt-in, that drives your own Claude Code with the bundled agent-skills: live progress, Stop, a banner of changed files, Revert and follow-up requests.
+- Editor MCP server and the `synod-editor-mcp` bridge: Claude reads and edits your open buffers as "Claude Edit" undo steps over a Unix socket with a per-session token, with no network listener.
+- Settings › Claude: enable the prompt bar, set the `claude` path and the model, and opt in to external Terminal access (off at every launch, with Copy MCP config and Disconnect).
+- Headless checks `--completion-check`, `--claude-check`, `--mcp-check` and `--m10`, with `scripts/acceptance-m10.sh` and `scripts/acceptance-m10-live.sh` for the owner's own Claude Code login.
+
+### Changed
+
+- Bundled `synod` v0.2.6 and agent-skills v0.2.0; player v0.2.1 and examples v0.2.1 are unchanged. All pinned and verified in `deps.env`.
+- Release builds must pass the M8, M9 and M10 acceptance runs first.
+
 ## v0.2.1 — 2026-10-22
 
 Implements Synod 0.2.
