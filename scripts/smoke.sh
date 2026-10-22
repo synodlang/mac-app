@@ -25,3 +25,14 @@ cat "${report%.json}-stage.json"
 # Editor: tokens, live diagnostics, quick fix, save with fmt, go to definition on a temporary copy.
 "$exe" --editor-check "$app/Contents/Resources/examples" --report "${report%.json}-editor.json"
 cat "${report%.json}-editor.json"
+
+# Learning modes (M9): Predict choices, stage hit tests and clicks, Break it by clicks, Compare, GIF export.
+ex="$app/Contents/Resources/examples"
+"$exe" --predict-check "$ex" --report "${report%.json}-predict.json"
+"$exe" --hit-check "$ex" --report "${report%.json}-hit.json"
+"$exe" --breakit-check "$ex" --script Tests/Acceptance/cassandra-handoff.json --report "${report%.json}-breakit.json"
+"$exe" --compare-check "$ex" raft --seeds 3,4 --report "${report%.json}-compare.json"
+gifdir="$(mktemp -d)"
+"$exe" --export "$ex" tcp --out "$gifdir/tcp.gif" --width 640 --fps 20 --rate 1
+"$exe" --gif-check "$gifdir/tcp.gif" --module "$ex" --program tcp --samples 10 --report "${report%.json}-gif.json"
+rm -rf "$gifdir"

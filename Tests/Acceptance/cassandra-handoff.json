@@ -1,0 +1,45 @@
+{
+  "name": "cassandra hinted handoff by clicks alone",
+  "module": "cassandra",
+  "program": "cassandra",
+  "replace": {
+    "file": "cassandra/demo.synod",
+    "with": "cassandra-calm.synod"
+  },
+  "steps": [
+    {
+      "seekLastFactAtOrBefore": "6s",
+      "clickNode": "n5",
+      "offers": "crash",
+      "action": "crash",
+      "time": "6s"
+    },
+    {
+      "seekLastFactAtOrBefore": "18s",
+      "clickNode": "n5",
+      "offers": "restart",
+      "action": "restart"
+    }
+  ],
+  "expect": {
+    "node": "n5",
+    "crashWindowSeconds": [
+      6,
+      7
+    ],
+    "hintsNode": "n2",
+    "hintsField": "cassandra.PendingHints",
+    "hintsAfterSeconds": 12,
+    "mutationType": "cassandra.Mutation",
+    "dataField": "cassandra.Data",
+    "dataContains": [
+      "user:42",
+      "Grace"
+    ],
+    "insertedBlocks": [
+      "sim.Crash (item 4 of sim.Nodes) # n5",
+      "sim.Restart (item 4 of sim.Nodes) # n5"
+    ]
+  },
+  "note": "Step 1 sets the sheet's time to 6s: with the default 6001ms (first whole ms after the fact at 6s) gossip takes another course with seed 3 and n2 never suspects n5 before the write at 12s, so no hint is stored."
+}
