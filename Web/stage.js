@@ -47,6 +47,26 @@
     clearTimeout(entry.timer);
   };
 
+  // The poster frame of a scene: the end of its opening burst of animation keys (gaps of at most
+  // 300 ms, capped at 1 s or a quarter of the scene). A scene's frame at 0 ms is usually empty or a
+  // pile of shapes still at their spawn point, which would leave the stage blank until Play.
+  function posterTime(text) {
+    try {
+      const scene = JSON.parse(text);
+      const cap = Math.min(1000, (scene.duration || 0) / 4);
+      const times = new Set();
+      for (const shape of scene.shapes || []) for (const k of shape.keys || []) times.add(k.at);
+      let at = 0;
+      for (const t of Array.from(times).sort((x, y) => x - y)) {
+        if (t - at > 300 || t > cap) break;
+        at = t;
+      }
+      return at;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   async function boot() {
     const player = SynodPlayer.mount("#stage", { autoplay: false, bridge: "synodPlayer" });
     const canvas = document.querySelector("#stage canvas");
@@ -62,6 +82,11 @@
       },
       setScene(text, keepTime) {
         player.setScene(text, { keepTime: !!keepTime });
+        // Show the poster frame instead of the (usually empty) frame at 0 ms.
+        if (!player.playing && player.time === 0) {
+          const at = posterTime(text);
+          if (at > 0) player.seek(at);
+        }
         return window.stage.info();
       },
       play() { player.play(); },

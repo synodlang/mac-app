@@ -17,3 +17,7 @@ if ! "$exe" --help 2>&1 | grep -q -- '--smoke'; then
 fi
 "$exe" --smoke "$app/Contents/Resources/examples" --report "$report"
 cat "$report"
+
+# Stage regressions: a loaded scene is drawn while paused; Predict stops at the first pause marker.
+"$exe" --stage-check "$app/Contents/Resources/examples" --report "${report%.json}-stage.json"
+cat "${report%.json}-stage.json"

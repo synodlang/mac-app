@@ -75,10 +75,10 @@ final class WorkspaceModel {
     private var eventTask: Task<Void, Never>?
     private var watchTask: Task<Void, Never>?
     private var captionTask: Task<Void, Never>?
-    private var lastPauseMarker: String?
+    private var predict = PredictLogic()
     private var scrub = Throttle(perSecond: 60)
 
-    init(workspace: Workspace, env: AppEnvironment = .shared) {
+    init(workspace: Workspace, env: AppEnvironment = .shared, recordRecent: Bool = true) {
         self.workspace = workspace
         self.env = env
         scan = workspace.scan()
@@ -100,7 +100,7 @@ final class WorkspaceModel {
         }
         startEventLoop()
         startWatching()
-        env.addRecent(workspace.root)
+        if recordRecent { env.addRecent(workspace.root) }
         if let first = scan.programs.first(where: { $0.name == "tcp" }) ?? scan.programs.first {
             select(Item(origin: .own, kind: .program, relPath: first.relPath))
         } else if let first = examplesScan?.programs.first, scan.packages.isEmpty {
@@ -189,7 +189,7 @@ final class WorkspaceModel {
         try await stage.setScene(run.sceneText, keepTime: keepTime)
         if let seek { try await stage.seek(to: seek) }
         try? await stage.setRate(speed)
-        if predictEnabled { try? await stage.setStopAtPause(true) }
+        try? await stage.setStopAtPause(predictEnabled)
         timeline = TimelineModel(scene: run.scene)
         if selectedNode == nil || !run.trace.nodes.contains(selectedNode ?? "") { selectedNode = run.trace.nodes.first }
         banner = nil
@@ -216,6 +216,8 @@ final class WorkspaceModel {
         Task {
             if stage.state.playing { try? await stage.pause() } else {
                 predictQuestion = nil
+                // Re-assert in the same task as play so no earlier toggle can be lost or reordered.
+                try? await stage.setStopAtPause(predictEnabled)
                 try? await stage.play()
             }
         }
@@ -277,7 +279,10 @@ final class WorkspaceModel {
         predictQuestion = nil
         predictAnswer = ""
         guard let stage else { return }
-        Task { try? await stage.play() }
+        Task {
+            try? await stage.setStopAtPause(predictEnabled)
+            try? await stage.play()
+        }
     }
 
     // MARK: Events
@@ -292,6 +297,10 @@ final class WorkspaceModel {
     }
 
     private func handle(_ ev: PlayerEvent) {
+        if let q = predict.handle(ev, predictEnabled: predictEnabled) {
+            predictQuestion = q
+            predictAnswer = AnswerStore(moduleRoot: workspace.root, program: activeProgram?.relPath ?? ".").entry(for: q)?.answer ?? ""
+        }
         switch ev {
         case .marker(let kind, _, let text):
             switch kind {
@@ -302,16 +311,9 @@ final class WorkspaceModel {
                     try? await Task.sleep(for: .seconds(4))
                     if !Task.isCancelled { self?.caption = nil }
                 }
-            case "pause":
-                lastPauseMarker = text
             case "broken", "failed":
                 banner = text.isEmpty ? kind.capitalized : text
             default: break
-            }
-        case .pause(let reason):
-            if reason == .marker, predictEnabled, let q = lastPauseMarker {
-                predictQuestion = q
-                predictAnswer = AnswerStore(moduleRoot: workspace.root, program: activeProgram?.relPath ?? ".").entry(for: q)?.answer ?? ""
             }
         case .error(let m):
             stageError = m

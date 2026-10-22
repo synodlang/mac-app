@@ -50,3 +50,30 @@ public enum FrameCompare {
         return try PixelBuffers.pngData(from: out)
     }
 }
+
+public extension BGRAImage {
+    /// Number of distinct RGB colours (alpha ignored), with each channel quantised to 8 levels
+    /// so antialiasing noise does not count. A flat image gives 1.
+    var distinctColorCount: Int {
+        var seen = Set<UInt16>()
+        var i = 0
+        while i < bytes.count {
+            seen.insert(UInt16(bytes[i] >> 5) | UInt16(bytes[i + 1] >> 5) << 3 | UInt16(bytes[i + 2] >> 5) << 6)
+            i += 4
+        }
+        return seen.count
+    }
+
+    /// Fraction of pixels whose RGB differs from the most common colour (0 for a flat image).
+    var nonBackgroundFraction: Double {
+        var counts: [UInt32: Int] = [:]
+        var i = 0
+        while i < bytes.count {
+            counts[UInt32(bytes[i]) | UInt32(bytes[i + 1]) << 8 | UInt32(bytes[i + 2]) << 16, default: 0] += 1
+            i += 4
+        }
+        let total = width * height
+        guard total > 0, let top = counts.values.max() else { return 0 }
+        return Double(total - top) / Double(total)
+    }
+}

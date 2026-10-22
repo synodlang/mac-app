@@ -73,4 +73,14 @@ import Testing
         #expect(!a.isComplete)
         #expect(WebAssets.repository().webDirectory.lastPathComponent == "Web")
     }
+
+    @Test func colorStatsFlatAndNot() {
+        let flat = BGRAImage(width: 20, height: 20, b: 46, g: 26, r: 21)
+        #expect(flat.distinctColorCount == 1)
+        #expect(flat.nonBackgroundFraction == 0)
+        var img = flat
+        for i in 0..<40 { img.bytes[i * 4] = 250; img.bytes[i * 4 + 2] = 10 }
+        #expect(img.distinctColorCount == 2)
+        #expect(img.nonBackgroundFraction == 0.1)
+    }
 }

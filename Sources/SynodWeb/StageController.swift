@@ -243,4 +243,13 @@ public final class StageController {
         guard let b64 = r as? String, let data = Data(base64Encoded: b64) else { throw StageError.badResult("png") }
         return data
     }
+
+    /// A snapshot of what the web view shows, as pixels.
+    public func snapshotImage() async throws -> BGRAImage {
+        let config = WKSnapshotConfiguration()
+        let image: NSImage = try await webView.takeSnapshot(configuration: config)
+        guard let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:]) else { throw StageError.badResult("snapshot") }
+        return try PixelBuffers.decodePNG(png)
+    }
 }

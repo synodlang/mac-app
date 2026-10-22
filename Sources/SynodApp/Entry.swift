@@ -5,7 +5,7 @@ import AppKit
 /// NSApplication without a window server presence; everything else starts the SwiftUI app.
 @main
 enum Entry {
-    static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export"]
+    static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export", "--stage-check"]
 
     static let helpText = """
     Synod: the Mac app for the Synod language.
@@ -18,6 +18,8 @@ enum Entry {
             [--seed N] [--mode ordered|proportional]
       Synod --acceptance <module> --out <dir> [--program raft] [--quick]
             smoke test, then export a program at 1080p60 and compare frames with the stage
+      Synod --stage-check <module> [--program raft] [--report f]
+            the stage draws a loaded scene while paused and Predict stops at the pause marker
       Synod --help
     """
 
