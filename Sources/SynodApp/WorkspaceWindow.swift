@@ -51,8 +51,20 @@ struct WorkspaceView: View {
                 if let err = model.stageError {
                     BannerView(text: err, systemImage: "xmark.octagon.fill", tint: .red)
                 }
-                StageArea(model: model)
-                TimelineBar(model: model)
+                if model.editorVisible {
+                    VSplitView {
+                        VStack(spacing: 0) {
+                            StageArea(model: model)
+                            TimelineBar(model: model)
+                        }
+                        .frame(minHeight: 340)
+                        EditorPane(model: model)
+                            .frame(minHeight: 150, idealHeight: 260)
+                    }
+                } else {
+                    StageArea(model: model)
+                    TimelineBar(model: model)
+                }
             }
         }
         .inspector(isPresented: $model.inspectorVisible) {
@@ -117,6 +129,8 @@ struct WorkspaceToolbar: ToolbarContent {
             Button { model.showExport = true } label: { Label("Export", systemImage: "square.and.arrow.up") }
                 .disabled(model.loaded == nil)
                 .help("Export a video")
+            Button { model.editorVisible.toggle() } label: { Label("Editor", systemImage: "square.and.pencil") }
+                .help("Show or hide the editor (⌥⌘E)")
             Button { model.inspectorVisible.toggle() } label: { Label("Inspector", systemImage: "sidebar.trailing") }
         }
     }

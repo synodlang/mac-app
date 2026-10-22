@@ -16,7 +16,6 @@ struct InspectorContainer: View {
             switch model.tab {
             case .inspector: InspectorView(model: model)
             case .problems: ProblemsView(model: model)
-            case .source: SourceView(model: model)
             }
         }
     }

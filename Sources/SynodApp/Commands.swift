@@ -37,6 +37,23 @@ struct AppCommands: Commands {
             Button("Copy Examples to Folder…") { model?.copyExamples() }
                 .disabled(model == nil)
         }
+        CommandGroup(replacing: .saveItem) {
+            Button("Save") { model?.editor.saveCurrent() }
+                .keyboardShortcut("s")
+                .disabled(model?.editor.current.map { $0.isReadOnly } ?? true)
+        }
+        CommandMenu("Editor") {
+            Button("Quick Fix…") { model?.editor.quickFix() }
+                .keyboardShortcut(".", modifiers: [.command])
+                .disabled(model?.editor.current == nil)
+            Button("Go to Definition") { model?.editor.goToDefinitionAtCaret() }
+                .keyboardShortcut(.downArrow, modifiers: [.command])
+                .disabled(model?.editor.current == nil)
+            Divider()
+            Button(model?.editorVisible == false ? "Show Editor" : "Hide Editor") { model?.editorVisible.toggle() }
+                .keyboardShortcut("e", modifiers: [.command, .option])
+                .disabled(model == nil)
+        }
         CommandMenu("Run") {
             Button("Run") { model?.run(.manual) }
                 .keyboardShortcut("r")

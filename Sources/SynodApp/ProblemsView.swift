@@ -18,6 +18,8 @@ struct ProblemRow: Identifiable, Equatable {
     var notes: [String] = []
     var labels: [CheckReport.Label] = []
     var helps: [String] = []
+    /// The compiler diagnostic the row comes from; its helps with edits are quick fixes.
+    var diagnostic: CheckReport.Diagnostic?
 
     var location: String? {
         guard let file, let line, let col else { return nil }
@@ -33,7 +35,7 @@ struct ProblemRow: Identifiable, Equatable {
                     id: "d\(i):\(d.id)", severity: d.isError ? .error : (d.severity == "warning" ? .warning : .note),
                     code: d.code, message: d.message, file: d.file, line: d.line, col: d.col,
                     endLine: d.end.line, endCol: d.end.col, hint: d.hint, label: d.label,
-                    notes: d.notes, labels: d.labels, helps: d.help.map(\.text)))
+                    notes: d.notes, labels: d.labels, helps: d.help.map(\.text), diagnostic: d))
             }
         }
         if let raw, !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -64,15 +66,35 @@ struct ProblemsView: View {
     @Bindable var model: WorkspaceModel
 
     var body: some View {
-        let rows = ProblemRow.rows(report: model.coordinator.diagnostics, status: model.loaded?.status,
+        let rows = ProblemRow.rows(report: model.problemReport, status: model.loaded?.status,
                                    raw: model.coordinator.rawProblems, error: model.coordinator.errorMessage)
         if rows.isEmpty {
             ContentUnavailableView("No problems", systemImage: "checkmark.circle", description: Text("The last run was clean."))
         } else {
             List(rows) { row in
-                Button { open(row) } label: { RowView(row: row) }
-                    .buttonStyle(.plain)
+                RowView(row: row, fixes: fixes(for: row), apply: apply, open: { open(row) })
             }
+        }
+    }
+
+    private func fixes(for row: ProblemRow) -> [EditorFix] {
+        guard let d = row.diagnostic else { return [] }
+        let origin = model.selection?.origin ?? .own
+        return d.help.filter { !$0.edits.isEmpty }.map { EditorFix(file: d.file, origin: origin, text: $0.text, help: $0) }
+    }
+
+    /// The user picked a fix: it edits the buffer (not the file) and the editor shows the place.
+    private func apply(_ fix: EditorFix) {
+        do {
+            try model.editor.apply(fix)
+            model.editor.lastError = nil
+            if let e = fix.help.edits.first {
+                model.show(source: SourceTarget(file: fix.file, origin: fix.origin,
+                                                primary: .init(line: e.line, col: e.col, endLine: nil, endCol: nil)))
+            }
+        } catch {
+            model.editor.lastError = error.localizedDescription
+            model.editorVisible = true
         }
     }
 
@@ -89,6 +111,10 @@ struct ProblemsView: View {
 
     struct RowView: View {
         let row: ProblemRow
+        var fixes: [EditorFix] = []
+        var apply: (EditorFix) -> Void = { _ in }
+        var open: () -> Void = {}
+
         var body: some View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -107,10 +133,20 @@ struct ProblemsView: View {
                     Text("\(l.file):\(l.line):\(l.col)  \(l.text)").font(.caption).foregroundStyle(.secondary)
                 }
                 ForEach(row.notes, id: \.self) { Text("Note: \($0)").font(.callout).foregroundStyle(.secondary) }
-                ForEach(row.helps, id: \.self) { Label($0, systemImage: "wand.and.stars").font(.callout) }
+                ForEach(row.helps.filter { h in !fixes.contains { $0.text == h } }, id: \.self) {
+                    Label($0, systemImage: "wand.and.stars").font(.callout)
+                }
+                ForEach(fixes) { fix in
+                    HStack {
+                        Label(fix.text, systemImage: "wand.and.stars").font(.callout)
+                        Spacer()
+                        Button("Apply Fix") { apply(fix) }.controlSize(.small)
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
+            .onTapGesture { open() }
         }
         var icon: String {
             switch row.severity {

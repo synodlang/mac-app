@@ -7,6 +7,7 @@ enum HeadlessCommands {
     static func run(_ args: [String]) async -> Int32 {
         if args.contains("--smoke") { return await smoke(args) }
         if args.contains("--stage-check") { return await StageCheck.run(args) }
+        if args.contains("--editor-check") { return await HeadlessEditor.run(args) }
         if args.contains("--export") { return await export(args) }
         if args.contains("--acceptance") { return await acceptance(args) }
         return 2

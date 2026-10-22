@@ -10,7 +10,7 @@ enum SpeedChoice {
     static func label(_ r: Double) -> String { r == r.rounded() ? "\(Int(r))×" : "\(r)×" }
 }
 
-/// Where the read-only source view looks.
+/// Where the editor should look: a file, and optionally a span to reveal.
 struct SourceTarget: Equatable {
     struct Span: Equatable {
         var line: Int
@@ -37,7 +37,7 @@ final class WorkspaceModel {
     }
 
     enum InspectorTab: String, CaseIterable, Identifiable {
-        case inspector = "Inspector", problems = "Problems", source = "Source"
+        case inspector = "Inspector", problems = "Problems"
         var id: String { rawValue }
     }
 
@@ -46,6 +46,7 @@ final class WorkspaceModel {
     let isReadOnly: Bool
     let env: AppEnvironment
     let coordinator = RunCoordinator()
+    let editor: EditorModel
 
     private(set) var scan: Workspace.Scan
     private(set) var examplesScan: Workspace.Scan?
@@ -63,6 +64,7 @@ final class WorkspaceModel {
     var selectedNode: String?
     var onlySelectedNode = false
     var source: SourceTarget?
+    var editorVisible = true
 
     var caption: String?
     var banner: String?
@@ -87,12 +89,18 @@ final class WorkspaceModel {
         isReadOnly = exWorkspace.map { Self.isInside(workspace.root, $0.root) } ?? false
         examples = isReadOnly ? nil : exWorkspace
         examplesScan = examples?.scan()
+        editor = EditorModel(workspace: workspace, examples: examples, ownReadOnly: isReadOnly,
+                             runner: { [env] in env.runner })
 
         do {
             let s = try StageController(assets: WebAssets.locate())
             stage = s
         } catch {
             stageError = "The player could not start: \(error.localizedDescription)"
+        }
+        editor.programTarget = { [weak self] in
+            guard let self, let s = self.selection, s.kind == .program else { return nil }
+            return (s.origin, s.relPath)
         }
         coordinator.currentSeq = { [weak self] in self?.currentFact?.seq }
         coordinator.apply = { [weak self] run, seek, keepTime in
@@ -119,6 +127,7 @@ final class WorkspaceModel {
         watchTask?.cancel()
         captionTask?.cancel()
         watcher?.stop()
+        editor.stop()
         coordinator.cancel()
         stage?.tearDown()
         stage = nil
@@ -149,13 +158,16 @@ final class WorkspaceModel {
         case .program:
             if let p = activeProgram {
                 source = SourceTarget(file: relFile(p.relPath, p.mainFile), origin: item.origin)
+                try? editor.show(file: relFile(p.relPath, p.mainFile), origin: item.origin)
+                editor.programChanged()
                 run(.selection)
             }
         case .package:
             let list = (item.origin == .own ? scan : examplesScan ?? scan).packages
             if let pkg = list.first(where: { $0.relPath == item.relPath }), let f = pkg.files.first {
                 source = SourceTarget(file: relFile(pkg.relPath, f), origin: item.origin)
-                tab = .source
+                try? editor.show(file: relFile(pkg.relPath, f), origin: item.origin)
+                editorVisible = true
             }
         }
         _ = ws
@@ -331,6 +343,7 @@ final class WorkspaceModel {
             for await _ in w.events {
                 guard let self else { return }
                 self.scan = self.workspace.scan()
+                self.editor.diskChanged()
                 if self.selection?.origin == .own { self.run(.fileChange) }
             }
         }
@@ -338,28 +351,23 @@ final class WorkspaceModel {
 
     // MARK: Sources and problems
 
-    func fileURL(for target: SourceTarget) -> URL? {
-        workspace(for: target.origin)?.url(forRelative: target.file)
-    }
-
+    /// Opens a file in the editor, revealing the target's primary span.
     func show(source target: SourceTarget) {
         source = target
-        tab = .source
-        inspectorVisible = true
+        editorVisible = true
+        do {
+            try editor.show(file: target.file, origin: target.origin, span: target.primary)
+        } catch {
+            editor.lastError = error.localizedDescription
+        }
     }
 
-    func openInEditor() {
-        guard let t = source, let url = fileURL(for: t) else { return }
-        NSWorkspace.shared.open(url)
-    }
-
-    /// Files of the folder holding the current source file, for the Source picker.
-    var siblingFiles: [String] {
-        guard let t = source else { return [] }
-        let dir = (t.file as NSString).deletingLastPathComponent
-        let full = workspace(for: t.origin)?.url(forRelative: dir.isEmpty ? "." : dir)
-        let names = (full.flatMap { try? FileManager.default.contentsOfDirectory(atPath: $0.path) } ?? []).filter { $0.hasSuffix(".synod") }.sorted()
-        return names.map { dir.isEmpty ? $0 : dir + "/" + $0 }
+    /// Problems for the Problems list: the editor's latest check of the shown program (it
+    /// includes unsaved buffers), else the last run's.
+    var problemReport: CheckReport? {
+        if let r = editor.programReport,
+           let s = selection, s.kind == .program, editor.programReportTarget == s.relPath { return r }
+        return coordinator.diagnostics
     }
 
     // MARK: Examples

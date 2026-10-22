@@ -21,3 +21,7 @@ cat "$report"
 # Stage regressions: a loaded scene is drawn while paused; Predict stops at the first pause marker.
 "$exe" --stage-check "$app/Contents/Resources/examples" --report "${report%.json}-stage.json"
 cat "${report%.json}-stage.json"
+
+# Editor: tokens, live diagnostics, quick fix, save with fmt, go to definition on a temporary copy.
+"$exe" --editor-check "$app/Contents/Resources/examples" --report "${report%.json}-editor.json"
+cat "${report%.json}-editor.json"

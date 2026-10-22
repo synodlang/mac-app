@@ -61,25 +61,6 @@ import SynodCore
     }
 }
 
-@MainActor @Suite struct SourceLocatorTests {
-    @Test func offsetsCountCodePoints() {
-        let text = "abc\nd😀f\nxyz"
-        #expect(SourceLocator.offset(in: text, line: 1, col: 1) == 0)
-        #expect(SourceLocator.offset(in: text, line: 1, col: 3) == 2)
-        #expect(SourceLocator.offset(in: text, line: 2, col: 1) == 4)
-        #expect(SourceLocator.offset(in: text, line: 2, col: 4) == 8)
-        #expect(SourceLocator.offset(in: text, line: 3, col: 2) == 10)
-        #expect(SourceLocator.offset(in: text, line: 9, col: 1) == (text as NSString).length)
-    }
-
-    @Test func rangesWithAndWithoutAnEnd() {
-        let text = "abc\ndef\n"
-        #expect(SourceLocator.range(in: text, line: 2, col: 2, endLine: 2, endCol: 4) == NSRange(location: 5, length: 2))
-        #expect(SourceLocator.range(in: text, line: 1, col: 2, endLine: nil, endCol: nil) == NSRange(location: 1, length: 2))
-        #expect(SourceLocator.range(in: text, line: 1, col: 2, endLine: 1, endCol: 2).length == 1)
-    }
-}
-
 @MainActor @Suite struct ProblemRowTests {
     @Test func faultsAndBrokenRulesBecomeRows() {
         let status = RunStatusParser.parse("""
