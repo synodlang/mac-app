@@ -72,7 +72,7 @@ final class BreakItModel {
     var canUndo: Bool { snapshot != nil }
 
     @ObservationIgnored private var snapshot: (file: String, origin: WorkspaceModel.Origin, text: String)?
-    @ObservationIgnored private var plannerCache: (serial: Int, planner: BreakItPlanner)?
+    @ObservationIgnored private var plannerCache: (run: UUID, planner: BreakItPlanner)?
 
     // MARK: Offers
 
@@ -99,9 +99,9 @@ final class BreakItModel {
 
     var planner: BreakItPlanner? {
         guard let host, let run = host.loadedRun else { return nil }
-        if let c = plannerCache, c.serial == host.runSerial { return c.planner }
+        if let c = plannerCache, c.run == run.id { return c.planner }
         let p = BreakItPlanner(index: run.trace)
-        plannerCache = (host.runSerial, p)
+        plannerCache = (run.id, p)
         return p
     }
 

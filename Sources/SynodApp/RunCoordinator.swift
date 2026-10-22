@@ -11,6 +11,8 @@ extension RunPipeline: ProgramRunning {}
 
 /// A successful (or failed-but-traced) run, ready for the stage and the inspector.
 struct LoadedRun: Sendable {
+    /// Tells this load from any other, even of the same program (caches key on it).
+    let id = UUID()
     /// `<module root>|<program path>`: equal keys mean "the same program as before".
     let programKey: String
     let sceneText: String
