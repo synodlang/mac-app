@@ -68,6 +68,11 @@ public struct BreakItPlan: Sendable, Equatable {
     /// The two lines appended to `define main`, without a trailing newline.
     public var blockLines: [String] { ["  after \(timeLiteral)", "    \(statement)"] }
 
+    /// An empty plan, so a sheet can show why an action could not be planned.
+    public static func empty(for action: BreakItAction) -> BreakItPlan {
+        BreakItPlan(action: action, time: 0, statement: "", imports: [], expectation: .healed(at: 0))
+    }
+
     /// The same plan at another time (the sheet lets the user change `T` for crash, restart,
     /// partition and heal; the drop keeps the message's send time, so it ignores this).
     public func retimed(to t: Int64) -> BreakItPlan {
@@ -133,10 +138,20 @@ public struct BreakItPlanner: Sendable {
 
     // MARK: Time and nodes
 
-    /// The first whole millisecond strictly after the fact `factSeq`'s time (`0` with no fact).
+    /// When the run stopped (the time of `sim.Ended`); nil when the trace has no end. A block
+    /// `after` a later time never runs.
+    public var endTime: Int64? {
+        index.events.last(where: { if case .ended = $0.payload { return true } else { return false } })?.t
+    }
+
+    /// The first whole millisecond strictly after the fact `factSeq`'s time (`0` with no fact),
+    /// but never at or past the end of the run: at the end it is the last whole millisecond
+    /// before it, where the nodes of the run still exist.
     public func defaultTime(factSeq: Int?) -> Int64 {
-        guard let s = factSeq, let e = index.event(seq: s) else { return 0 }
-        return (e.t / 1000 + 1) * 1000
+        guard let s = factSeq, let e = index.event(atOrBefore: s) else { return 0 }
+        let next = (e.t / 1000 + 1) * 1000
+        guard let end = endTime, end > 0, next >= end else { return next }
+        return max(0, ((end - 1) / 1000) * 1000)
     }
 
     /// `sim.Nodes` at `T`: nodes added and not removed by events strictly before `T`, in creation order.
@@ -158,6 +173,8 @@ public struct BreakItPlanner: Sendable {
     /// Crash for a node that is up at the fact, Restart for a crashed one.
     public func offer(forNode node: String, factSeq: Int?) -> BreakItNodeOffer {
         guard let s = factSeq, let st = index.state(of: node, atSeq: s) else { return .none }
+        // Offered only when the block would be valid: the node exists at the default time.
+        guard nodes(at: defaultTime(factSeq: s)).contains(node) else { return .none }
         switch st.status {
         case .up: return .crash
         case .crashed: return .restart

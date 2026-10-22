@@ -122,7 +122,10 @@ final class BreakItModel {
             sheet = Sheet(action: action, plan: plan, timeText: plan.timeLiteral, file: target.file)
             outcome = nil
         } catch {
-            outcome = .failed(error.localizedDescription)
+            // The reason belongs in the sheet, next to the time that can be corrected.
+            sheet = Sheet(action: action, plan: .empty(for: action), timeText: "", file: target.file,
+                          error: error.localizedDescription)
+            outcome = nil
         }
     }
 
@@ -134,6 +137,11 @@ final class BreakItModel {
         guard s.timeIsEditable else { sheet = s; return }
         guard let us = FormatTime.parse(text.trimmingCharacters(in: .whitespaces)), us >= 0 else {
             s.error = "Write a time like 6001ms or 6s."
+            sheet = s
+            return
+        }
+        if let end = planner.endTime, end > 0, us >= end {
+            s.error = "The run ends at \(FormatTime.string(microseconds: end)); pick an earlier time."
             sheet = s
             return
         }

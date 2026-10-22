@@ -526,3 +526,26 @@ func breakItEditsCompileAndTakeEffectInTheDevCompiler() async throws {
         }
     }
 }
+
+// MARK: Break it at the end of a run
+
+@Test func defaultTimeAtTheEndOfTheRunStaysInsideIt() throws {
+    let index = try syntheticIndex([
+        #"{"seq":1,"t":0,"ev":"sim.Added","node":"n1","runs":[],"state":{}}"#,
+        #"{"seq":2,"t":0,"ev":"sim.Added","node":"n2","runs":[],"state":{}}"#,
+        #"{"seq":3,"t":7999500,"ev":"sim.Fired","node":"n1"}"#,
+        #"{"seq":5,"t":8000000,"ev":"sim.Ended","reason":"stop"}"#,
+    ])
+    let planner = BreakItPlanner(index: index)
+    #expect(planner.endTime == 8_000_000)
+    // The fact after the last whole millisecond: clamp to the last whole ms before the end.
+    #expect(planner.defaultTime(factSeq: 3) == 7_999_000)
+    #expect(planner.defaultTime(factSeq: 5) == 7_999_000)
+    // A fact seq without its own event (the player's last entry) uses the event before it.
+    #expect(planner.defaultTime(factSeq: 4) == 7_999_000)
+    #expect(planner.defaultTime(factSeq: 2) == 1_000)
+    #expect(planner.offer(forNode: "n2", factSeq: 5) == .crash)
+    let plan = try planner.plan(.crash(node: "n2"), factSeq: 5)
+    #expect(plan.time == 7_999_000)
+    #expect(plan.statement == "sim.Crash (item 1 of sim.Nodes) # n2")
+}

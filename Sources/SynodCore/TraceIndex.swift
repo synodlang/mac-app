@@ -90,6 +90,12 @@ public struct TraceIndex: Sendable {
         return i >= 0 && events[i].seq == seq ? events[i] : nil
     }
 
+    /// The last event with `seq <= x` (a fact the trace has no event for still has a time).
+    public func event(atOrBefore x: Int) -> TraceEvent? {
+        let i = lastIndex(atOrBefore: x)
+        return i >= 0 ? events[i] : nil
+    }
+
     /// The simulated time of the event with this seq (for the simulated-time display).
     public func simTime(ofSeq seq: Int) -> SimTime? { event(seq: seq)?.time }
 

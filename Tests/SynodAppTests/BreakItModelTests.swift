@@ -154,4 +154,12 @@ private func rig() throws -> (BreakItModel, FakeHost, URL) {
         #expect(b.sheet?.error != nil)
         #expect(b.sheet?.plan.timeLiteral == "6s")   // the last good plan stays
     }
+
+    @Test func aPlanThatCannotBeMadeShowsItsReasonInTheSheet() throws {
+        let (b, host, root) = try rig()
+        defer { try? FileManager.default.removeItem(at: root); _ = host }
+        b.begin(.crash(node: "n9"))
+        #expect(b.outcome == nil, "no banner")
+        #expect(b.sheet?.error?.contains("n9") == true)
+    }
 }

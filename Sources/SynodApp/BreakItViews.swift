@@ -82,6 +82,7 @@ struct BreakItSheet: View {
                         Text("A drop acts when the message is sent, so its time is fixed.").font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                if !sheet.plan.statement.isEmpty {
                 Text("This is added at the end of define main:").font(.callout).foregroundStyle(.secondary)
                 Text(sheet.plan.blockLines.joined(separator: "\n"))
                     .font(.system(.body, design: .monospaced))
@@ -89,6 +90,7 @@ struct BreakItSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                     .textSelection(.enabled)
+                }
                 Text("The file is saved (formatted) and the program runs again. Undo restores it.")
                     .font(.caption).foregroundStyle(.secondary)
                 HStack {
@@ -180,6 +182,7 @@ struct BreakItBanners: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
         .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
+        .padding(.vertical, 2)
     }
 }
 

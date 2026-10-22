@@ -24,6 +24,36 @@ struct StageArea: View {
     @Bindable var model: WorkspaceModel
 
     var body: some View {
+        // Status banners sit in a bar above the stage, never over it, so they cannot cover its text.
+        VStack(spacing: 0) {
+            statusBar
+            stage
+        }
+        .frame(minHeight: 280)
+        .background(Color.black)
+    }
+
+    @ViewBuilder private var statusBar: some View {
+        let failure = failureText
+        let stale = model.coordinator.stale
+        VStack(spacing: 4) {
+            BreakItBanners(model: model)
+            if let failure {
+                BannerView(text: failure, systemImage: "exclamationmark.octagon.fill", tint: .red)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(.vertical, 2)
+            }
+            if stale {
+                BannerView(text: "Stale: the last run failed. Showing the previous good run.", systemImage: "clock.badge.exclamationmark", tint: .orange)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(.vertical, 2)
+            }
+        }
+        .padding(.horizontal, 8)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var stage: some View {
         ZStack(alignment: .bottom) {
             if let stage = model.stage {
                 StageView(controller: stage)
@@ -31,16 +61,7 @@ struct StageArea: View {
                 Color.black
             }
             VStack(spacing: 8) {
-                BreakItBanners(model: model)
                 BoxSelectionChip(model: model)
-                if let banner = failureText {
-                    BannerView(text: banner, systemImage: "exclamationmark.octagon.fill", tint: .red)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-                if model.coordinator.stale {
-                    BannerView(text: "Stale: the last run failed. Showing the previous good run.", systemImage: "clock.badge.exclamationmark", tint: .orange)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
                 if let c = model.caption {
                     Text(c)
                         .font(.title3)
@@ -58,8 +79,6 @@ struct StageArea: View {
         .overlay(alignment: .topTrailing) {
             if model.coordinator.isRunning { ProgressView().controlSize(.small).padding(10) }
         }
-        .frame(minHeight: 280)
-        .background(Color.black)
     }
 
     private var failureText: String? {
