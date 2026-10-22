@@ -121,22 +121,39 @@ struct UnsavedWindowGuard: NSViewRepresentable {
     func makeCoordinator() -> WindowCloseGuard { WindowCloseGuard() }
 
     func makeNSView(context: Context) -> NSView {
-        let v = NSView()
+        let v = GuardView()
         context.coordinator.model = model
-        DispatchQueue.main.async { [weak v] in
-            guard let window = v?.window else { return }
-            let g = context.coordinator
-            if window.delegate !== g {
-                g.original = window.delegate
-                window.delegate = g
-            }
-        }
+        v.guardDelegate = context.coordinator
         return v
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         context.coordinator.model = model
+        (nsView as? GuardView)?.install()
         nsView.window?.isDocumentEdited = !model.editor.dirtyDocuments.isEmpty
+    }
+
+    /// Puts the guard on the window as soon as the view has one, and again whenever SwiftUI
+    /// replaces the window delegate (it does so after the first layout).
+    final class GuardView: NSView {
+        weak var guardDelegate: WindowCloseGuard?
+        private var observation: NSKeyValueObservation?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            observation = nil
+            guard let window else { return }
+            install()
+            observation = window.observe(\.delegate, options: [.new]) { [weak self] _, _ in
+                DispatchQueue.main.async { MainActor.assumeIsolated { self?.install() } }
+            }
+        }
+
+        func install() {
+            guard let window, let g = guardDelegate, window.delegate !== g else { return }
+            g.original = window.delegate
+            window.delegate = g
+        }
     }
 }
 

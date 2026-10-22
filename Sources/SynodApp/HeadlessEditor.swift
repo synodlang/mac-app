@@ -158,6 +158,16 @@ enum HeadlessEditor {
                 if times[times.count / 2] >= 16 { fail("highlighting \(largest) took \(times[times.count / 2]) ms") }
             }
             trace("largest done")
+            // Typing at the end of the file: the diagnostic sits on the typed line, under the typed text.
+            try editor.show(file: "raft/demo.synod")
+            try await editor.applyEdit(file: "raft/demo.synod") { $0 + "define broken(" }
+            await editor.checkNow()
+            let lastLine = doc.positions.lineCount
+            if let m = doc.marks.first(where: { $0.kind == .error }), let d = m.diagnostic {
+                if d.line != lastLine { fail("typed at the end: diagnostic on line \(d.line), expected \(lastLine)") }
+                if (doc.text as NSString).substring(with: m.range) != "(" { fail("typed at the end: the underline covers \((doc.text as NSString).substring(with: m.range))") }
+            } else { fail("typed at the end: no error mark") }
+            doc.undoManager.undo()
             // Broken file: an unbalanced "(" still gets lexical tokens (decision 79).
             try editor.show(file: "raft/demo.synod")
             trace("shown")
