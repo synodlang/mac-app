@@ -40,7 +40,7 @@ public struct WebAssets: Sendable {
     public var isComplete: Bool {
         let fm = FileManager.default
         return fm.fileExists(atPath: playerScriptURL.path)
-            && ["stage.html", "stage.js", "export.html", "export.js"].allSatisfy {
+            && ["stage.html", "stage.js", "export.html", "export.js", "compare.html", "compare.js"].allSatisfy {
                 fm.fileExists(atPath: webDirectory.appendingPathComponent($0).path)
             }
     }
@@ -50,6 +50,8 @@ public struct WebAssets: Sendable {
     public func stageJS() throws -> String { try read("stage.js") }
     public func exportHTML() throws -> String { try read("export.html") }
     public func exportJS() throws -> String { try read("export.js") }
+    public func compareHTML() throws -> String { try read("compare.html") }
+    public func compareJS() throws -> String { try read("compare.js") }
 
     private func read(_ name: String) throws -> String {
         try String(contentsOf: webDirectory.appendingPathComponent(name), encoding: .utf8)

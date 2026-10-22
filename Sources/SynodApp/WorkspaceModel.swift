@@ -302,7 +302,7 @@ final class WorkspaceModel {
             predictAnswer = AnswerStore(moduleRoot: workspace.root, program: activeProgram?.relPath ?? ".").entry(for: q)?.answer ?? ""
         }
         switch ev {
-        case .marker(let kind, _, let text):
+        case .marker(let kind, _, let text, _):
             switch kind {
             case "caption":
                 caption = text

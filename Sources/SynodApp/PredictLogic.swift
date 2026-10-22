@@ -8,7 +8,7 @@ struct PredictLogic {
     /// Feeds one stage event; returns the question to ask when the player halted at a marker.
     mutating func handle(_ ev: PlayerEvent, predictEnabled: Bool) -> String? {
         switch ev {
-        case .marker(let kind, _, let text) where kind == "pause":
+        case .marker(let kind, _, let text, _) where kind == "pause":
             lastPauseMarker = text
         case .pause(let reason) where reason == .marker:
             let q = lastPauseMarker

@@ -67,10 +67,104 @@
     }
   }
 
+  // Selection outline and drag rectangle: an overlay canvas over the player's canvas. It is not part of
+  // the player's canvas, so exported and rendered frames never contain it.
+  function installOverlay(player, canvas) {
+    const root = canvas.parentElement;
+    const overlay = document.createElement("canvas");
+    overlay.style.cssText = "position:absolute;pointer-events:none;left:0;top:0;";
+    root.appendChild(overlay);
+    const state = { selection: null, drag: null };
+
+    const local = (e) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+    const intersects = (a, b) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
+
+    let down = null;
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      const p = local(e);
+      down = { x0: p.x, y0: p.y, id: e.pointerId, moved: false };
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* synthetic event */ }
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!down || e.pointerId !== down.id) return;
+      const p = local(e);
+      if (!down.moved && Math.hypot(p.x - down.x0, p.y - down.y0) > 4) down.moved = true;
+      if (down.moved) {
+        state.drag = { x: Math.min(down.x0, p.x), y: Math.min(down.y0, p.y), w: Math.abs(p.x - down.x0), h: Math.abs(p.y - down.y0) };
+      }
+    });
+    const finish = (e) => {
+      if (!down || e.pointerId !== down.id) return;
+      const p = local(e);
+      const wasDrag = down.moved;
+      const start = down;
+      down = null;
+      state.drag = null;
+      if (wasDrag) {
+        const rect = { x: Math.min(start.x0, p.x), y: Math.min(start.y0, p.y), w: Math.abs(p.x - start.x0), h: Math.abs(p.y - start.y0) };
+        const nodes = player.nodeBounds().filter((b) => intersects(rect, b)).map((b) => b.node);
+        post({ event: "box", rect, nodes });
+      } else if (e.type === "pointerup") {
+        post({ event: "click", x: p.x, y: p.y, hit: player.hitTest(p.x, p.y) });
+      }
+    };
+    canvas.addEventListener("pointerup", finish);
+    canvas.addEventListener("pointercancel", finish);
+
+    let drawn = false;
+    function paint() {
+      const need = state.selection !== null || state.drag !== null;
+      if (need || drawn) {
+        const r = canvas.getBoundingClientRect();
+        const rr = root.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+        if (overlay.width !== w || overlay.height !== h) { overlay.width = w; overlay.height = h; }
+        overlay.style.left = (r.left - rr.left) + "px";
+        overlay.style.top = (r.top - rr.top) + "px";
+        overlay.style.width = r.width + "px";
+        overlay.style.height = r.height + "px";
+        const ctx = overlay.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (state.selection !== null) {
+          const box = player.nodeBounds().find((b) => b.node === state.selection);
+          if (box) {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#F4A340";
+            ctx.strokeRect(box.x - 4, box.y - 4, box.w + 8, box.h + 8);
+          }
+        }
+        if (state.drag) {
+          ctx.lineWidth = 1;
+          ctx.fillStyle = "rgba(244,163,64,0.12)";
+          ctx.strokeStyle = "#F4A340";
+          ctx.fillRect(state.drag.x, state.drag.y, state.drag.w, state.drag.h);
+          ctx.strokeRect(state.drag.x + 0.5, state.drag.y + 0.5, state.drag.w, state.drag.h);
+        }
+        drawn = need;
+      }
+    }
+    function loop() {
+      paint();
+      window.requestAnimationFrame(loop);
+    }
+    window.requestAnimationFrame(loop);
+    state.paint = paint;
+    return state;
+  }
+
   async function boot() {
     const player = SynodPlayer.mount("#stage", { autoplay: false, bridge: "synodPlayer" });
     const canvas = document.querySelector("#stage canvas");
     const entry = (e) => (e ? { seq: e.seq, at: e.at } : null);
+
+    const overlay = installOverlay(player, canvas);
 
     window.player = player;
     window.stage = {
@@ -99,6 +193,14 @@
       prevFact() { return entry(player.prevFact()); },
       factAt(at) { return entry(player.factAt(at)); },
       timeOfSeq(seq) { return player.timeOfSeq(seq); },
+      // Hit testing on the frame last drawn; (x, y) are CSS px of the canvas. See 04-formats "Hit testing".
+      hitTest(x, y) { return player.hitTest(x, y); },
+      nodeBounds() { return player.nodeBounds(); },
+      // Outlines the box of a node on every animation frame; null clears it.
+      setSelection(node) {
+        overlay.selection = node === null || node === undefined ? null : String(node);
+        overlay.paint();   // at once; the animation-frame loop keeps it in step afterwards
+      },
       // Renders one frame at `at` into a w x h css-pixel canvas at pixel ratio pr and returns PNG base64.
       // Pauses playback; the stage is redrawn at its own size afterwards.
       async renderFramePNG(at, w, h, pr) {

@@ -47,7 +47,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers" "$app/Contents/Resources/
 cp "$exe" "$app/Contents/MacOS/Synod"
 cp .deps/synod/synod "$app/Contents/Helpers/synod"
 cp .deps/player/synod-player.iife.js "$app/Contents/Resources/player/synod-player.iife.js"
-for f in stage.html stage.js export.html export.js; do
+for f in stage.html stage.js export.html export.js compare.html compare.js; do
   if [ -f "Web/$f" ]; then
     cp "Web/$f" "$app/Contents/Resources/web/$f"
   else

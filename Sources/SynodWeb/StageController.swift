@@ -54,14 +54,14 @@ public final class PlayerState {
         case .fact(let seq, _): factSeq = seq
         case .play: playing = true
         case .pause: playing = false
-        case .scene: break
+        case .scene, .click, .box: break
         case .error(let m): lastError = m
         }
     }
 }
 
 @MainActor
-private final class ScriptHandler: NSObject, WKScriptMessageHandler {
+final class ScriptHandler: NSObject, WKScriptMessageHandler {
     let onMessage: (Any) -> Void
     init(_ onMessage: @escaping (Any) -> Void) { self.onMessage = onMessage }
     func userContentController(_ c: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -232,6 +232,25 @@ public final class StageController {
     }
     public func timeOfSeq(_ seq: Int) async throws -> Double? {
         PlayerEvent.number(try await call("return window.stage.timeOfSeq(seq);", ["seq": seq]))
+    }
+
+    // MARK: Hit testing and selection (decisions 83 and 84)
+
+    /// The hit under (x, y), in CSS pixels of the stage canvas, on the frame last drawn; nil for none.
+    public func hitTest(x: Double, y: Double) async throws -> StageHit? {
+        StageHit.decode(try await call("return window.stage.hitTest(x, y);", ["x": x, "y": y]))
+    }
+
+    /// The box of every node with drawn circles or rects, in CSS pixels of the stage canvas.
+    public func nodeBounds() async throws -> [StageNodeBox] {
+        let r = try await call("return window.stage.nodeBounds();")
+        return (r as? [Any])?.compactMap(StageNodeBox.decode) ?? []
+    }
+
+    /// Outlines the box of `node` on the stage (nil clears it). The outline is an overlay, never part
+    /// of an exported frame.
+    public func setSelection(_ node: String?) async throws {
+        try await call("window.stage.setSelection(node);", ["node": node ?? NSNull()])
     }
 
     /// PNG of the stage drawn at `at` ms into a width x height css-pixel canvas at `pixelRatio`.

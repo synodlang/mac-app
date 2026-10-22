@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #151A2E; }
+  #panes { position: absolute; inset: 0; display: flex; flex-direction: row; gap: 2px; background: #3A4366; }
+  .pane { position: relative; flex: 1 1 0; min-width: 0; background: #151A2E; }
+  .pane canvas.scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<div id="panes">
+  <div class="pane" id="paneA"><canvas class="scene" id="canvasA"></canvas></div>
+  <div class="pane" id="paneB"><canvas class="scene" id="canvasB"></canvas></div>
+</div>
+</body>
+</html>

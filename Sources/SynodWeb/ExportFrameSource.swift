@@ -35,11 +35,22 @@ public final class ExportFrameSource {
     private let height: Int
     private let pixelRatio: Double
 
-    public init(assets: WebAssets, sceneText: String, size: ExportSize, offscreenWindow: Bool = false) throws {
+    public convenience init(assets: WebAssets, sceneText: String, size: ExportSize, offscreenWindow: Bool = false) throws {
+        try self.init(
+            assets: assets, sceneText: sceneText, width: size.cssWidth, height: size.cssHeight,
+            pixelRatio: size.pixelRatio, offscreenWindow: offscreenWindow)
+    }
+
+    /// A frame source with an explicit layout size (CSS px) and pixel ratio; a GIF uses
+    /// the chosen width, the scene's aspect and ratio 1.
+    public init(
+        assets: WebAssets, sceneText: String, width: Int, height: Int, pixelRatio: Double = 1,
+        offscreenWindow: Bool = false
+    ) throws {
         self.sceneText = sceneText
-        width = size.cssWidth
-        height = size.cssHeight
-        pixelRatio = size.pixelRatio
+        self.width = width
+        self.height = height
+        self.pixelRatio = pixelRatio
         let config = WKWebViewConfiguration()
         let ucc = config.userContentController
         ucc.addUserScript(WKUserScript(source: try assets.playerScript(), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .page))

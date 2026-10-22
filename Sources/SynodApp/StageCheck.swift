@@ -196,7 +196,7 @@ enum StageCheck {
 
             // (c) the model logic: the pause marker's text becomes the question.
             let seen = log.events.compactMap { ev -> PlayerEvent? in
-                if case .marker(let k, _, _) = ev, k == "pause" { return ev } else { return nil }
+                if case .marker(let k, _, _, _) = ev, k == "pause" { return ev } else { return nil }
             }
             if seen.isEmpty { fail("no pause marker event before the halt") }
             var predict = PredictLogic()
