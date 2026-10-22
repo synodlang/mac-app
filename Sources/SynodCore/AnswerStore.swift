@@ -10,7 +10,15 @@ public struct AnswerStore: Sendable {
         public var seed: UInt64?
         public var mode: String
         public var date: Date
-        public init(question: String, answer: String, seed: UInt64?, mode: String, date: Date = Date()) {
+        /// With Predict choices (decision 82): the index of the chosen text in `choices`. Files
+        /// written before M9 have neither key and still decode.
+        public var choice: Int?
+        /// The choices that were offered; `answer` is `choices[choice]`.
+        public var choices: [String]?
+        public init(question: String, answer: String, seed: UInt64?, mode: String, date: Date = Date(),
+            choice: Int? = nil, choices: [String]? = nil) {
+            self.choice = choice
+            self.choices = choices
             self.question = question
             self.answer = answer
             self.seed = seed

@@ -18,23 +18,30 @@ public struct SceneSummary: Sendable, Equatable, Decodable {
         public let at: Double
         public let kind: String
         public let text: String
+        /// The choices of a `pause` marker written with `lesson.Ask … choosing` (decision 82);
+        /// empty for an open question and for every other kind.
+        public let choices: [String]
 
         /// The marker kind when known.
         public var known: Kind? { Kind(rawValue: kind) }
 
-        public init(at: Double, kind: String, text: String) {
+        public init(at: Double, kind: String, text: String, choices: [String] = []) {
             self.at = at
             self.kind = kind
             self.text = text
+            self.choices = choices
         }
 
-        enum CodingKeys: String, CodingKey { case at, kind, text }
+        enum CodingKeys: String, CodingKey { case at, kind, text, choices }
 
         public init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
             at = try c.decode(Double.self, forKey: .at)
             kind = try c.decode(String.self, forKey: .kind)
             text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
+            // Only pause markers carry choices; a malformed list counts as no choices.
+            let list = (try? c.decodeIfPresent([String].self, forKey: .choices)) ?? nil
+            choices = kind == "pause" ? (list ?? []) : []
         }
     }
 

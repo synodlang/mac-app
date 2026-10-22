@@ -5,6 +5,8 @@
 #   FAKE_FIXTURES  the Fixtures folder (for synced/ and own/)
 #   FAKE_ARGS_FILE if set, the arguments are appended to this file, one call per line
 #   FAKE_CHECK     check fixture under synced/check for FAKE_MODE=diag (default type-mismatch-nodes.json)
+#   FAKE_OVERLAY_OUT  if set and check gets --overlay <file>, the overlay's folder is copied to this path
+#   FAKE_FMT_EXIT  exit code of fmt (default 0); FAKE_FMT_APPEND text appended to the file fmt is given
 mode="${FAKE_MODE:-ok}"
 fix="${FAKE_FIXTURES:-.}"
 [ -n "${FAKE_ARGS_FILE:-}" ] && echo "$*" >> "$FAKE_ARGS_FILE"
@@ -15,7 +17,10 @@ shift
 trace=""
 scene=""
 prev=""
+tokens=""
 for a in "$@"; do
+  [ "$a" = "--tokens" ] && tokens=1
+  [ "$prev" = "--overlay" ] && [ -n "${FAKE_OVERLAY_OUT:-}" ] && cp -R "$(dirname "$a")" "$FAKE_OVERLAY_OUT"
   [ "$prev" = "--trace" ] && trace="$a"
   [ "$prev" = "--scene" ] && scene="$a"
   prev="$a"
@@ -44,7 +49,19 @@ case "$cmd" in
       echo
       exit 1
     fi
+    if [ -n "$tokens" ]; then
+      cat "$fix/own/check-tokens.json"
+      echo
+      exit 0
+    fi
     echo '{"format":"synod-check/1","ok":true,"diagnostics":[]}'
+    exit 0 ;;
+  fmt)
+    [ -n "${FAKE_FMT_APPEND:-}" ] && printf '%s' "$FAKE_FMT_APPEND" >> "$1"
+    if [ "${FAKE_FMT_EXIT:-0}" != 0 ]; then
+      echo "$1:3:1: error[syntax]: cannot format"
+      exit "$FAKE_FMT_EXIT"
+    fi
     exit 0 ;;
   run)
     case "$mode" in

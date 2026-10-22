@@ -194,7 +194,7 @@ private struct PipelineFixture {
 
     let calls = fx.calls
     #expect(calls.count == 2)
-    #expect(calls[0] == "check --json raft")
+    #expect(calls[0] == "check --json --tokens raft")
     #expect(calls[1].hasPrefix("run raft --mode proportional --seed 3 --trace "))
     #expect(calls[1].contains(" --style short --color never"))
     #expect(calls[1].contains(fx.cache.cacheRoot.path), "outputs go to the cache")
@@ -216,7 +216,7 @@ private struct PipelineFixture {
     guard case .diagnostics(let report) = outcome else { Issue.record("not diagnostics"); return }
     #expect(report.hasErrors)
     #expect(report.diagnostics.first?.code == "type-mismatch")
-    #expect(fx.calls == ["check --json raft"], "run must not start after errors")
+    #expect(fx.calls == ["check --json --tokens raft"], "run must not start after errors")
 }
 
 @Test func failedRunStillProducesAnOutcomeWithAScene() async throws {

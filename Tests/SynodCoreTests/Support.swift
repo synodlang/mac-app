@@ -59,8 +59,8 @@ func makeMiniModule(in dir: URL) throws -> URL {
 }
 
 /// A runner that executes fake-synod.sh through /bin/sh.
-func fakeRunner(_ mode: String, timeout: Duration = .seconds(30), argsFile: URL? = nil) -> SynodRunner {
-    var env = ["FAKE_MODE": mode, "FAKE_FIXTURES": Fixtures.root.path]
+func fakeRunner(_ mode: String, timeout: Duration = .seconds(30), argsFile: URL? = nil, extra: [String: String] = [:]) -> SynodRunner {
+    var env = ["FAKE_MODE": mode, "FAKE_FIXTURES": Fixtures.root.path].merging(extra) { _, new in new }
     if let argsFile { env["FAKE_ARGS_FILE"] = argsFile.path }
     return SynodRunner(executable: URL(fileURLWithPath: "/bin/sh"), prefixArgs: [Fixtures.fakeSynod.path], timeout: timeout, environment: env)
 }
@@ -81,4 +81,15 @@ final class Collector<T: Sendable>: @unchecked Sendable {
     private var items: [T] = []
     var values: [T] { lock.lock(); defer { lock.unlock() }; return items }
     func add(_ v: T) { lock.lock(); items.append(v); lock.unlock() }
+}
+
+/// A trace from event lines (without the header) and a scene whose `trace` map gives event `i`
+/// (1-based seq) the slot `slots[i - 1]`, for tests that need a shape the fixtures lack.
+func syntheticIndex(_ events: [String], slots: [Double]? = nil, duration: Double = 1000) throws -> TraceIndex {
+    let header = #"{"format":"synod-trace/1","synod":"0.2","seed":1,"program":"p","packages":["p"]}"#
+    let trace = try Trace.parse(Data((([header] + events).joined(separator: "\n") + "\n").utf8))
+    let at = slots ?? events.indices.map { Double($0) * 10 }
+    let entries = trace.events.enumerated().map { #"{"seq":\#($1.seq),"at":\#(at[$0])}"# }.joined(separator: ",")
+    let scene = try SceneSummary.parse(#"{"format":"synod-scene/1","duration":\#(duration),"canvas":{"w":1,"h":1},"markers":[],"trace":[\#(entries)]}"#)
+    return TraceIndex(trace: trace, scene: scene)
 }

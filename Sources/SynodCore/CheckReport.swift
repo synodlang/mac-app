@@ -88,11 +88,13 @@ public struct CheckReport: Sendable, Equatable, Decodable {
     public let format: String
     public let ok: Bool
     public let diagnostics: [Diagnostic]
+    /// The tokens of every user file of the checked packages; empty without `--tokens`.
+    public let files: [FileTokens]
 
     /// True when any diagnostic has severity `error`.
     public var hasErrors: Bool { diagnostics.contains { $0.isError } }
 
-    enum CodingKeys: String, CodingKey { case format, ok, diagnostics }
+    enum CodingKeys: String, CodingKey { case format, ok, diagnostics, files }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -100,6 +102,7 @@ public struct CheckReport: Sendable, Equatable, Decodable {
         try FormatError.require(format, name: "synod-check")
         diagnostics = try c.decodeIfPresent([Diagnostic].self, forKey: .diagnostics) ?? []
         ok = try c.decodeIfPresent(Bool.self, forKey: .ok) ?? diagnostics.isEmpty
+        files = try c.decodeIfPresent([FileTokens].self, forKey: .files) ?? []
     }
 
     /// Reads a `synod check --json` document.
