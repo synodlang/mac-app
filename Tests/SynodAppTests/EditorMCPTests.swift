@@ -181,6 +181,16 @@ private func expectFailure(_ code: EditorErrorCode, _ body: @MainActor () async 
         #expect(!"\(entries)".contains("SECRET-BUFFER-TEXT"))
     }
 
+    @Test func aClosedWindowAnswersNotFound() async throws {
+        let (model, root) = try makeModel(["lib/lib.synod": "# package lib\n"])
+        defer { try? FileManager.default.removeItem(at: root) }
+        let s = EditorMCPService(model: model, kind: .external)
+        model.stop()
+        await expectFailure(.notFound) { _ = try await s.readBuffer(path: "lib/lib.synod", startLine: nil, endLine: nil) }
+        await expectFailure(.notFound) { _ = try await s.listFiles() }
+        await expectFailure(.notFound) { _ = try await s.diagnostics(path: nil, fresh: false) }
+    }
+
     @Test func pathValidationAndLines() throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory())
         #expect(try EditorMCPService.validate("a//b/./c.synod", root: root) == "a/b/c.synod")

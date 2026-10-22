@@ -40,7 +40,10 @@ struct EditorMCPService: EditorService {
         return rel
     }
 
-    private func rel(_ path: String) throws -> String { try Self.validate(path, root: root) }
+    private func rel(_ path: String) throws -> String {
+        if model.isStopped { throw EditorToolError(.notFound, "this window was closed") }
+        return try Self.validate(path, root: root)
+    }
 
     private func requireNotBusy() throws {
         if kind == .external, model.claude.isRunning {
@@ -55,6 +58,7 @@ struct EditorMCPService: EditorService {
     // MARK: Reading
 
     func listFiles() async throws -> [EditorFileInfo] {
+        if model.isStopped { throw EditorToolError(.notFound, "this window was closed") }
         var paths: [String] = []
         let fm = FileManager.default
         func walk(_ dir: String) {
@@ -123,6 +127,7 @@ struct EditorMCPService: EditorService {
     }
 
     func diagnostics(path: String?, fresh: Bool) async throws -> EditorDiagnosticsResult {
+        if model.isStopped { throw EditorToolError(.notFound, "this window was closed") }
         let filter = try path.map { try rel($0) }
         var report: CheckReport?
         var stale = false
@@ -149,6 +154,7 @@ struct EditorMCPService: EditorService {
     }
 
     func selection() async throws -> EditorSelectionInfo {
+        if model.isStopped { throw EditorToolError(.notFound, "this window was closed") }
         guard let doc = editor.current, doc.origin == .own else {
             return EditorSelectionInfo(path: nil, version: nil, caret: nil, selections: [])
         }

@@ -100,6 +100,9 @@ final class WorkspaceModel {
     private(set) var runSerial = 0
     @ObservationIgnored private var autoSelecting = false
 
+    /// True once the window closed: editor tool calls for it are refused.
+    private(set) var isStopped = false
+
     private var fileRunsHeldUntil: ContinuousClock.Instant?
     private var watcher: FileWatcher?
     private var eventTask: Task<Void, Never>?
@@ -159,6 +162,7 @@ final class WorkspaceModel {
     }
 
     func stop() {
+        isStopped = true
         WorkspaceRegistry.remove(self)
         claude.shutdown()
         completion.stop()
