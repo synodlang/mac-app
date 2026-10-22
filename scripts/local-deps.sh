@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Builds the sibling checkouts into .deps/ for local development, before their releases exist:
+#   ../compiler  -> .deps/synod/synod            (go build ./cmd/synod, the host architecture)
+#   ../player    -> .deps/player/synod-player.iife.js  (esbuild into .deps; player/dist is not touched)
+#   ../examples  -> .deps/examples               (a copy without .git)
+# and writes .deps/.local. fetch-deps.sh refuses to run over that marker unless given --force.
+#   scripts/local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--skip-player]
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+compiler="$root/../compiler"
+player="$root/../player"
+examples="$root/../examples"
+skip_player=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --compiler) compiler="$2"; shift 2 ;;
+    --player) player="$2"; shift 2 ;;
+    --examples) examples="$2"; shift 2 ;;
+    --skip-player) skip_player=1; shift ;;
+    *) echo "usage: local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--skip-player]" >&2; exit 2 ;;
+  esac
+done
+
+die() { echo "local-deps: $*" >&2; exit 1; }
+[[ -d "$compiler/cmd/synod" ]] || die "no compiler at $compiler"
+[[ -d "$examples" ]] || die "no examples at $examples"
+
+deps="$root/.deps"
+mkdir -p "$deps/synod" "$deps/player"
+
+# compiler
+rm -f "$deps/synod/synod"
+(cd "$compiler" && go build -o "$deps/synod/synod" ./cmd/synod)
+"$deps/synod/synod" version | head -2 | sed 's/^/local-deps: /'
+
+# player: bundle the IIFE straight into .deps so the player checkout (and its dist/) stays untouched.
+if [[ $skip_player -eq 0 ]]; then
+  [[ -d "$player/node_modules/.bin" ]] || die "no node_modules in $player; run npm ci there (or pass --skip-player)"
+  version="$(node -p "require('$player/package.json').version")-local"
+  (cd "$player" && ./node_modules/.bin/esbuild src/iife.ts --bundle --minify --target=es2022 --format=iife \
+    --legal-comments=none --log-level=warning --define:__VERSION__="\"$version\"" \
+    --outfile="$deps/player/synod-player.iife.js")
+  echo "local-deps: player $version"
+fi
+
+# examples
+rm -rf "$deps/examples"
+mkdir -p "$deps/examples"
+(cd "$examples" && tar --exclude=.git -cf - .) | (cd "$deps/examples" && tar -xf -)
+echo "local-deps: examples copied from $examples"
+
+echo "compiler $(git -C "$compiler" rev-parse --short HEAD 2>/dev/null || echo unknown)" > "$deps/.local"
+echo "local-deps: ok (.deps/.local written; scripts/fetch-deps.sh --force restores the pinned releases)"

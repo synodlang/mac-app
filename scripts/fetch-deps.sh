@@ -10,9 +10,22 @@ source deps.env
 
 deps=".deps"
 base="https://github.com/synodlang"
-mkdir -p "$deps"
 
 die() { echo "fetch-deps: $*" >&2; exit 1; }
+
+# scripts/local-deps.sh marks .deps/.local; never silently replace local builds with the pins.
+force=0
+case "${1:-}" in
+  "") ;;
+  --force) force=1 ;;
+  *) die "usage: fetch-deps.sh [--force]" ;;
+esac
+if [ -f "$deps/.local" ]; then
+  [ "$force" = 1 ] || die ".deps holds local builds (.deps/.local); run with --force to replace them with the pinned releases"
+  rm -rf "$deps/synod" "$deps/player" "$deps/examples" "$deps/.local"
+  echo "fetch-deps: removed local builds"
+fi
+mkdir -p "$deps"
 
 sha() { shasum -a 256 "$1" | awk '{print $1}'; }
 
