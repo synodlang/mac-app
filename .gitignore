@@ -3,6 +3,7 @@
 build/
 dist/
 acc/
+acc-quick/
 .DS_Store
 *.xcodeproj
 smoke.json

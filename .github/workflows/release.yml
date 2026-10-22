@@ -36,13 +36,13 @@ jobs:
       - name: Bundle
         run: scripts/bundle.sh --version "${GITHUB_REF_NAME#v}"
       - name: Acceptance
-        # TODO(task E): drop the guard once --acceptance is implemented.
-        run: |
-          if build/Synod.app/Contents/MacOS/Synod --help 2>&1 | grep -q -- '--acceptance'; then
-            scripts/acceptance.sh build/Synod.app acc
-          else
-            echo "acceptance not implemented yet; skipping"
-          fi
+        run: scripts/acceptance.sh build/Synod.app acc
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance
+          path: acc
+          if-no-files-found: ignore
       - name: Package
         run: |
           source deps.env

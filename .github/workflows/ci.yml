@@ -77,11 +77,15 @@ jobs:
         run: codesign --verify --deep --strict build/Synod.app
       - name: Smoke test (every example plays)
         run: scripts/smoke.sh build/Synod.app smoke.json
-      - name: Acceptance on tcp (pull requests)
+      - name: Acceptance on tcp (pull requests, short run)
         if: github.event_name == 'pull_request'
-        # TODO(task E): short tcp-only run; remove continue-on-error once implemented.
-        continue-on-error: true
-        run: scripts/acceptance.sh build/Synod.app acc
+        run: scripts/acceptance.sh build/Synod.app acc-quick --quick
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: acceptance-quick
+          path: acc-quick
+          if-no-files-found: ignore
       - name: Package app
         run: |
           mkdir -p dist
@@ -110,8 +114,6 @@ jobs:
       - run: scripts/fetch-deps.sh
       - run: scripts/bundle.sh
       - name: Raft 1080p60 export acceptance
-        # TODO(task E): remove continue-on-error once --acceptance is implemented.
-        continue-on-error: true
         run: scripts/acceptance.sh build/Synod.app acc
       - uses: actions/upload-artifact@v4
         if: always()
