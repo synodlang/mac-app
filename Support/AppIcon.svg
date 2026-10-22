@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Synod icon: three nodes, one message in motion">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<g transform="translate(50 50) scale(0.804688)">
+  <rect x="0" y="0" width="512" height="512" rx="114" fill="#151A2E"/>
   <g stroke="#3A4366" stroke-width="10" stroke-linecap="round">
     <line x1="256" y1="123" x2="140" y2="323"/>
     <line x1="256" y1="123" x2="372" y2="323"/>
@@ -11,4 +13,5 @@
   <circle cx="256" cy="123" r="46" fill="#EDE9E1"/>
   <circle cx="140" cy="323" r="46" fill="#EDE9E1"/>
   <circle cx="372" cy="323" r="46" fill="#EDE9E1"/>
+</g>
 </svg>
