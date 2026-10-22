@@ -8,6 +8,10 @@ public struct Workspace: Sendable, Hashable {
         public let relPath: String
         /// File name of the main file inside the folder.
         public let mainFile: String
+        public init(relPath: String, mainFile: String) {
+            self.relPath = relPath
+            self.mainFile = mainFile
+        }
         public var id: String { relPath }
         /// Last path component, for display.
         public var name: String { relPath == "." ? "main" : String(relPath.split(separator: "/").last ?? "") }

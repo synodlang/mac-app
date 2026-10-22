@@ -76,8 +76,6 @@ jobs:
       - name: Verify signature
         run: codesign --verify --deep --strict build/Synod.app
       - name: Smoke test (every example plays)
-        # TODO(task D): remove continue-on-error once --smoke is implemented.
-        continue-on-error: true
         run: scripts/smoke.sh build/Synod.app smoke.json
       - name: Acceptance on tcp (pull requests)
         if: github.event_name == 'pull_request'
