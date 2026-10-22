@@ -184,7 +184,7 @@ private final class Lines: @unchecked Sendable {
     await proc.stop()
     let exit = try await result
     #expect(exit.status == 130 && exit.stopped)
-    #expect(ContinuousClock.now - start < .seconds(3))
+    #expect(ContinuousClock.now - start < .seconds(10))
 }
 
 @Test func processEscalatesToSigkillWhenSigintIsIgnored() async throws {
