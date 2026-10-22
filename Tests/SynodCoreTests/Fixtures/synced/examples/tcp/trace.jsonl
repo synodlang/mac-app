@@ -1,0 +1,20 @@
+{"format":"synod-trace/1","synod":"0.2","seed":1,"program":"github.com/synodlang/examples/tcp","packages":["github.com/synodlang/examples/tcp","std/lesson","std/net","std/sim"]}
+{"seq":1,"t":0,"ev":"sim.Started"}
+{"seq":2,"t":0,"ev":"sim.Added","node":"n1","runs":["std/net","std/sim","github.com/synodlang/examples/tcp"],"state":{"tcp.State":"CLOSED"}}
+{"seq":3,"t":0,"ev":"sim.Added","node":"n2","runs":["std/net","std/sim","github.com/synodlang/examples/tcp"],"state":{"tcp.State":"CLOSED"}}
+{"seq":4,"t":0,"ev":"sim.Changed","node":"n2","field":"tcp.State","old":"CLOSED","new":"LISTEN"}
+{"seq":5,"t":0,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Noted","fields":{"Text":"A connection needs three messages before data can flow."}}}
+{"seq":6,"t":0,"ev":"sim.Injected","node":"n1","record":{"type":"tcp.Open","fields":{"Server":{"node":"n2"}}}}
+{"seq":7,"t":0,"ev":"sim.Changed","node":"n1","field":"tcp.State","old":"CLOSED","new":"SYN-SENT"}
+{"seq":8,"t":0,"ev":"net.Sent","node":"n1","msg":{"id":1,"type":"tcp.Syn","fields":{"Seq":100}},"from":"n1","to":"n2"}
+{"seq":9,"t":5000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"What does the server send back after a SYN?"}}}
+{"seq":10,"t":22142,"ev":"net.Arrived","node":"n2","msg":{"id":1,"type":"tcp.Syn","fields":{"Seq":100}},"from":"n1","to":"n2"}
+{"seq":11,"t":22142,"ev":"sim.Changed","node":"n2","field":"tcp.State","old":"LISTEN","new":"SYN-RECEIVED"}
+{"seq":12,"t":22142,"ev":"net.Sent","node":"n2","msg":{"id":2,"type":"tcp.SynAck","fields":{"Seq":300,"AckNo":101}},"from":"n2","to":"n1"}
+{"seq":13,"t":33094,"ev":"net.Arrived","node":"n1","msg":{"id":2,"type":"tcp.SynAck","fields":{"Seq":300,"AckNo":101}},"from":"n2","to":"n1"}
+{"seq":14,"t":33094,"ev":"sim.Changed","node":"n1","field":"tcp.State","old":"SYN-SENT","new":"ESTABLISHED"}
+{"seq":15,"t":33094,"ev":"net.Sent","node":"n1","msg":{"id":3,"type":"tcp.Ack","fields":{"AckNo":301}},"from":"n1","to":"n2"}
+{"seq":16,"t":59234,"ev":"net.Arrived","node":"n2","msg":{"id":3,"type":"tcp.Ack","fields":{"AckNo":301}},"from":"n1","to":"n2"}
+{"seq":17,"t":59234,"ev":"sim.Changed","node":"n2","field":"tcp.State","old":"SYN-RECEIVED","new":"ESTABLISHED"}
+{"seq":18,"t":100000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Noted","fields":{"Text":"Both ends are ESTABLISHED: data can now flow either way."}}}
+{"seq":19,"t":100000,"ev":"sim.Ended","reason":"empty"}

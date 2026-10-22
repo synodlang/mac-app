@@ -1,0 +1,27 @@
+{"format":"synod-trace/1","synod":"0.2","seed":1,"program":"github.com/synodlang/examples/twopc","packages":["github.com/synodlang/examples/twopc","std/lesson","std/lists","std/net","std/random","std/sim"]}
+{"seq":1,"t":0,"ev":"sim.Started"}
+{"seq":2,"t":0,"ev":"sim.Added","node":"n1","runs":["std/lists","std/net","std/random","std/sim","github.com/synodlang/examples/twopc"],"state":{"twopc.State":"idle","twopc.Participants":[]}}
+{"seq":3,"t":0,"ev":"sim.Added","node":"n2","runs":["std/lists","std/net","std/random","std/sim","github.com/synodlang/examples/twopc"],"state":{"twopc.State":"idle","twopc.Participants":[]}}
+{"seq":4,"t":0,"ev":"sim.Added","node":"n3","runs":["std/lists","std/net","std/random","std/sim","github.com/synodlang/examples/twopc"],"state":{"twopc.State":"idle","twopc.Participants":[]}}
+{"seq":5,"t":0,"ev":"sim.Added","node":"n4","runs":["std/lists","std/net","std/random","std/sim","github.com/synodlang/examples/twopc"],"state":{"twopc.State":"idle","twopc.Participants":[]}}
+{"seq":6,"t":0,"ev":"sim.Changed","node":"n1","field":"twopc.Participants","old":[],"new":[{"node":"n2"},{"node":"n3"},{"node":"n4"}]}
+{"seq":7,"t":0,"ev":"sim.Injected","node":"n1","record":{"type":"twopc.Begin","fields":{"Tx":1}}}
+{"seq":8,"t":0,"ev":"sim.Changed","node":"n1","field":"twopc.State","old":"idle","new":"waiting"}
+{"seq":9,"t":0,"ev":"net.Sent","node":"n1","msg":{"id":1,"type":"twopc.Prepare","fields":{"tx":"…"}},"from":"n1","to":"n2"}
+{"seq":10,"t":0,"ev":"net.Sent","node":"n1","msg":{"id":2,"type":"twopc.Prepare","fields":{"tx":"…"}},"from":"n1","to":"n3"}
+{"seq":11,"t":0,"ev":"net.Sent","node":"n1","msg":{"id":3,"type":"twopc.Prepare","fields":{"tx":"…"}},"from":"n1","to":"n4"}
+{"seq":12,"t":10952,"ev":"net.Arrived","node":"n3","msg":{"id":2,"type":"twopc.Prepare","fields":{"tx":"…"}},"from":"n1","to":"n3"}
+{"seq":13,"t":10952,"ev":"sim.Changed","node":"n3","field":"twopc.State","old":"idle","new":"prepared"}
+{"seq":14,"t":10952,"ev":"net.Sent","node":"n3","msg":{"id":4,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n3","to":"n1"}
+{"seq":15,"t":22142,"ev":"net.Arrived","node":"n2","msg":{"id":1,"type":"twopc.Prepare","fields":{"tx":"…"}},"from":"n1","to":"n2"}
+{"seq":16,"t":22142,"ev":"sim.Changed","node":"n2","field":"twopc.State","old":"idle","new":"prepared"}
+{"seq":17,"t":22142,"ev":"net.Sent","node":"n2","msg":{"id":5,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n2","to":"n1"}
+{"seq":18,"t":26140,"ev":"net.Arrived","node":"n4","msg":{"id":3,"type":"twopc.Prepare","fields":{"tx":"…"}},"from":"n1","to":"n4"}
+{"seq":19,"t":26140,"ev":"sim.Changed","node":"n4","field":"twopc.State","old":"idle","new":"prepared"}
+{"seq":20,"t":26140,"ev":"net.Sent","node":"n4","msg":{"id":6,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n4","to":"n1"}
+{"seq":21,"t":32533,"ev":"net.Arrived","node":"n1","msg":{"id":4,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n3","to":"n1"}
+{"seq":22,"t":38926,"ev":"net.Arrived","node":"n1","msg":{"id":6,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n4","to":"n1"}
+{"seq":23,"t":45000,"ev":"sim.Crashed","node":"n1"}
+{"seq":24,"t":45000,"ev":"sim.Emitted","node":null,"record":{"type":"lesson.Asked","fields":{"Question":"The coordinator crashed while votes were in flight. What can a prepared participant do?"}}}
+{"seq":25,"t":45881,"ev":"net.Dropped","node":"n1","msg":{"id":5,"type":"twopc.Vote","fields":{"tx":"…","yes":"…"}},"from":"n2","to":"n1","reason":"crashed"}
+{"seq":26,"t":45881,"ev":"sim.Ended","reason":"empty"}

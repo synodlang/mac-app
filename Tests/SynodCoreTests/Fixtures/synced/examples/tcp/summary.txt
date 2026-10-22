@@ -1,0 +1,32 @@
+run github.com/synodlang/examples/tcp seed 1
+end: empty at 100ms, 2 nodes, 9 steps, 19 events
+steps:
+@0s main
+  sim.Started
+  sim.Added n1 runs tcp: tcp.State "CLOSED"
+  sim.Added n2 runs tcp: tcp.State "CLOSED"
+  sim.Changed tcp.State of n2 from "CLOSED" to "LISTEN"
+  sim.Emitted lesson.Noted{Text "A connection needs three messages before data can flow."} by nobody
+  sim.Injected tcp.Open{Server n2} into n1
+@0s deliver n1
+  sim.Changed tcp.State of n1 from "CLOSED" to "SYN-SENT"
+  net.Sent #1 tcp.Syn{Seq 100} from n1 to n2
+@5ms timer main
+  sim.Emitted lesson.Asked{Question "What does the server send back after a SYN?"} by nobody
+@22.142ms receive n2
+  net.Arrived #1 tcp.Syn{Seq 100} from n1 to n2
+  sim.Changed tcp.State of n2 from "LISTEN" to "SYN-RECEIVED"
+  net.Sent #2 tcp.SynAck{Seq 300, AckNo 101} from n2 to n1
+@33.094ms receive n1
+  net.Arrived #2 tcp.SynAck{Seq 300, AckNo 101} from n2 to n1
+  sim.Changed tcp.State of n1 from "SYN-SENT" to "ESTABLISHED"
+  net.Sent #3 tcp.Ack{AckNo 301} from n1 to n2
+@59.234ms receive n2
+  net.Arrived #3 tcp.Ack{AckNo 301} from n1 to n2
+  sim.Changed tcp.State of n2 from "SYN-RECEIVED" to "ESTABLISHED"
+@100ms timer main
+  sim.Emitted lesson.Noted{Text "Both ends are ESTABLISHED: data can now flow either way."} by nobody
+  sim.Ended empty
+final:
+  n1 up  tcp.State "ESTABLISHED"
+  n2 up  tcp.State "ESTABLISHED"

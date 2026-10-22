@@ -1,0 +1,45 @@
+run github.com/synodlang/examples/twopc seed 1
+end: empty at 45.881ms, 4 nodes, 13 steps, 26 events
+always:
+  holds          twopc/twopc.synod:85: always Atomic
+steps:
+@0s main
+  sim.Started
+  sim.Added n1 runs twopc: twopc.State "idle", twopc.Participants {}
+  sim.Added n2 runs twopc: twopc.State "idle", twopc.Participants {}
+  sim.Added n3 runs twopc: twopc.State "idle", twopc.Participants {}
+  sim.Added n4 runs twopc: twopc.State "idle", twopc.Participants {}
+  sim.Changed twopc.Participants of n1 from {} to {n2, n3, n4}
+  sim.Injected twopc.Begin{Tx 1} into n1
+@0s deliver n1
+  sim.Changed twopc.State of n1 from "idle" to "waiting"
+  net.Sent #1 twopc.Prepare{tx 1} from n1 to n2
+  net.Sent #2 twopc.Prepare{tx 1} from n1 to n3
+  net.Sent #3 twopc.Prepare{tx 1} from n1 to n4
+@10.952ms receive n3
+  net.Arrived #2 twopc.Prepare{tx 1} from n1 to n3
+  sim.Changed twopc.State of n3 from "idle" to "prepared"
+  net.Sent #4 twopc.Vote{tx 1, yes true} from n3 to n1
+@22.142ms receive n2
+  net.Arrived #1 twopc.Prepare{tx 1} from n1 to n2
+  sim.Changed twopc.State of n2 from "idle" to "prepared"
+  net.Sent #5 twopc.Vote{tx 1, yes true} from n2 to n1
+@26.14ms receive n4
+  net.Arrived #3 twopc.Prepare{tx 1} from n1 to n4
+  sim.Changed twopc.State of n4 from "idle" to "prepared"
+  net.Sent #6 twopc.Vote{tx 1, yes true} from n4 to n1
+@32.533ms receive n1
+  net.Arrived #4 twopc.Vote{tx 1, yes true} from n3 to n1
+@38.926ms receive n1
+  net.Arrived #6 twopc.Vote{tx 1, yes true} from n4 to n1
+@45ms timer main
+  sim.Crashed n1
+  sim.Emitted lesson.Asked{Question "The coordinator crashed while votes were in flight. What can a prepared participant do?"} by nobody
+@45.881ms receive n1
+  net.Dropped #5 twopc.Vote{tx 1, yes true} from n2 to n1 (crashed)
+  sim.Ended empty
+final:
+  n1 down  twopc.State "waiting", twopc.Participants {n2, n3, n4}
+  n2 up  twopc.State "prepared", twopc.Participants {}
+  n3 up  twopc.State "prepared", twopc.Participants {}
+  n4 up  twopc.State "prepared", twopc.Participants {}

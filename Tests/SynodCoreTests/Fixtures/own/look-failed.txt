@@ -1,0 +1,2 @@
+ok seed 1: empty at 100ms, 2 nodes, 19 events -> out/trace.jsonl
+look failed at 2s: lk/lk.synod:7:3: error[missing-key]: no shape is attached to "nope" under "card"

@@ -1,0 +1,1 @@
+{"format":"synod-check/1","ok":false,"diagnostics":[{"file":"p/p.synod","line":4,"col":1,"end":{"line":4,"col":2},"severity":"error","code":"indent","message":"tabs are not allowed","hint":"indent with 2 spaces per level","help":[{"text":"indent with 2 spaces per level"}]}]}
