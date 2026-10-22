@@ -63,6 +63,11 @@ enum Entry {
             app.run()
             return
         }
+        // Windows are never restored: every launch starts from the Welcome scene or the folder given.
+        UserDefaults.standard.register(defaults: ["NSQuitAlwaysKeepsWindows": false])
+        if let lib = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
+            try? FileManager.default.removeItem(at: lib.appendingPathComponent("Saved Application State/io.github.synodlang.synod.savedState"))
+        }
         SynodApp.main()
     }
 }

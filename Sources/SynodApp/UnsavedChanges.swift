@@ -159,6 +159,14 @@ struct UnsavedWindowGuard: NSViewRepresentable {
 
 /// Quitting asks about each window's unsaved buffers first.
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    /// AppKit reads a folder on the command line (`Synod.app --args <folder>`) as a document to
+    /// open, and then SwiftUI skips its launch window, so the router never runs. Reopening the
+    /// app makes SwiftUI present the launch scene, which opens the folder (see `LaunchRouter`).
+    func application(_ app: NSApplication, openFile f: String) -> Bool {
+        DispatchQueue.main.async { NSWorkspace.shared.open(Bundle.main.bundleURL) }
+        return true
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let dirty = WorkspaceRegistry.models.filter { !$0.editor.dirtyDocuments.isEmpty }
         guard !dirty.isEmpty else { return .terminateNow }

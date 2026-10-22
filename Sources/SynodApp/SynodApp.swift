@@ -65,10 +65,20 @@ struct LaunchRouter<Content: View>: View {
     }
 }
 
-/// Makes the hosting window fully transparent and inert while it routes the launch.
+/// Makes the hosting window fully transparent and inert while it routes the launch, and gives
+/// it back its normal look when the view goes away (the window is reused by a later reopen).
 private struct WindowHider: NSViewRepresentable {
+    final class HiderView: NSView {
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if newWindow == nil, let w = window {
+                w.alphaValue = 1
+                w.ignoresMouseEvents = false
+            }
+            super.viewWillMove(toWindow: newWindow)
+        }
+    }
     func makeNSView(context: Context) -> NSView {
-        let v = NSView()
+        let v = HiderView()
         DispatchQueue.main.async {
             v.window?.alphaValue = 0
             v.window?.ignoresMouseEvents = true
