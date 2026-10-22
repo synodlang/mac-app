@@ -14,6 +14,10 @@ public struct CachePaths: Sendable, Equatable {
     }
 
     public static var `default`: CachePaths {
+        // Headless modes point this at a throwaway folder so they never touch the user's data.
+        if let dir = ProcessInfo.processInfo.environment["SYNOD_DATA_DIR"], !dir.isEmpty {
+            return under(URL(fileURLWithPath: dir, isDirectory: true))
+        }
         let fm = FileManager.default
         let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask).first ?? fm.temporaryDirectory
         let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? fm.temporaryDirectory

@@ -51,14 +51,8 @@ struct WelcomeView: View {
         .frame(width: 520, height: 420, alignment: .topLeading)
         .task {
             env.probeIfNeeded()
-            if let url = LaunchArguments.workspaceURL, !Self.launched {
-                Self.launched = true
-                open(url)
-            }
         }
     }
-
-    @MainActor private static var launched = false
 
     private func open(_ url: URL) {
         openWindow(value: url)

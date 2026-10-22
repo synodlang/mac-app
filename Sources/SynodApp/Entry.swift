@@ -32,8 +32,13 @@ enum Entry {
         if args.contains(where: { headlessFlags.contains($0) }) {
             let app = NSApplication.shared
             app.setActivationPolicy(.prohibited)
+            // Headless runs use a fresh temporary data folder, removed when done.
+            let data = FileManager.default.temporaryDirectory
+                .appendingPathComponent("synod-headless-\(UUID().uuidString)", isDirectory: true)
+            setenv("SYNOD_DATA_DIR", data.path, 1)
             Task { @MainActor in
                 let code = await HeadlessCommands.run(args)
+                try? FileManager.default.removeItem(at: data)
                 fflush(stdout)
                 exit(code)
             }

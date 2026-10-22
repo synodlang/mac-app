@@ -102,15 +102,25 @@ final class AppEnvironment {
 
 /// A workspace path given on the command line (`Synod.app --args <folder>`), if any.
 enum LaunchArguments {
-    static var workspaceURL: URL? {
-        let args = CommandLine.arguments.dropFirst()
-        for a in args where !a.hasPrefix("-") {
-            var isDir: ObjCBool = false
+    /// Never shown; stands in for "no workspace" in the workspace window group.
+    static let placeholder = URL(fileURLWithPath: "/dev/null")
+
+    static var workspaceURL: URL? { workspaceURL(in: Array(CommandLine.arguments.dropFirst())) }
+
+    /// The first argument that is not an option (or macOS's `-NS...` defaults pairs) and names an existing path.
+    static func workspaceURL(in args: [String], exists: (String) -> Bool? = isDirectory) -> URL? {
+        var skipNext = false
+        for a in args {
+            if skipNext { skipNext = false; continue }
+            if a.hasPrefix("-") { skipNext = a.hasPrefix("-NS") || a.hasPrefix("-Apple"); continue }
             let path = (a as NSString).expandingTildeInPath
-            if FileManager.default.fileExists(atPath: path, isDirectory: &isDir) {
-                return URL(fileURLWithPath: path, isDirectory: isDir.boolValue)
-            }
+            if let isDir = exists(path) { return URL(fileURLWithPath: path, isDirectory: isDir) }
         }
         return nil
+    }
+
+    nonisolated static func isDirectory(_ path: String) -> Bool? {
+        var isDir: ObjCBool = false
+        return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) ? isDir.boolValue : nil
     }
 }
