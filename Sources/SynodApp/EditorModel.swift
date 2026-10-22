@@ -63,6 +63,14 @@ final class EditorModel {
     @ObservationIgnored var presentFixes: (([EditorFix]) -> Void)?
     /// Runs after a file was saved (and formatted), for example to start a run.
     @ObservationIgnored var didSave: ((EditorDocument) -> Void)?
+    /// Runs after a check covered `doc`'s file, with its report (completion refreshes its scope here).
+    @ObservationIgnored var didCheck: ((EditorDocument, CheckReport) -> Void)?
+    /// Set by the active text view: opens the completion list at the caret (⌃Space).
+    @ObservationIgnored var triggerCompletion: (() -> Void)?
+    /// Phrase completion of this editor, set by the workspace model.
+    @ObservationIgnored var completion: CompletionController?
+    /// True while a prompt-bar request runs: the user cannot type (Claude edits through the MCP tools).
+    var userLocked = false
 
     /// Quiet time after the last keystroke before unsaved buffers are checked (decision 81).
     var debounce: Duration = .milliseconds(300)
@@ -74,6 +82,8 @@ final class EditorModel {
     /// The latest check of the shown program, including unsaved buffers; the Problems list prefers it.
     private(set) var programReport: CheckReport?
     private(set) var programReportTarget: String?
+    /// The latest check of the whole module including unsaved buffers (the editor MCP server's `get_diagnostics`).
+    @ObservationIgnored private(set) var moduleReport: CheckReport?
     private(set) var reveal: Reveal?
     private(set) var isChecking = false
     /// Counts finished checks (headless runs and tests wait on it).
@@ -224,7 +234,10 @@ final class EditorModel {
                 programReport = report
                 programReportTarget = target
             }
-            if report.tokens(for: doc.file) != nil || doc.file.hasPrefix("vendor/") { break }
+            if report.tokens(for: doc.file) != nil || doc.file.hasPrefix("vendor/") {
+                didCheck?(doc, report)
+                break
+            }
         }
         checkCount += 1
     }
@@ -297,7 +310,7 @@ final class EditorModel {
 
     /// ⌘S: saves the shown buffer, reporting problems in `lastError`.
     func saveCurrent() {
-        guard let doc = current, !doc.isReadOnly else { return }
+        guard let doc = current, !doc.isReadOnly, !userLocked else { return }
         Task { [weak self] in
             do { try await self?.save(file: doc.file, origin: doc.origin) } catch {
                 self?.lastError = error.localizedDescription
@@ -315,6 +328,142 @@ final class EditorModel {
         guard !doc.isReadOnly else { throw EditorError.readOnly(file) }
         let new = try transform(doc.text)
         doc.replaceText(with: new, actionName: actionName)
+    }
+
+    // MARK: Claude's edits (the editor MCP server, decision 99)
+
+    /// Whether `file` may be written by a tool: a `.synod` file or `synod.mod` outside `vendor/`, `out/` and
+    /// dot or underscore folders.
+    static func isWritablePath(_ file: String) -> Bool {
+        let parts = file.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        guard let name = parts.last, !parts.contains(where: \.isEmpty) else { return false }
+        for dir in parts.dropLast() where dir == "vendor" || dir == "out" || dir.hasPrefix(".") || dir.hasPrefix("_") { return false }
+        if name.hasPrefix(".") || name.hasPrefix("_") { return false }
+        return name.hasSuffix(".synod") || (parts.count == 1 && name == "synod.mod")
+    }
+
+    /// Throws `read-only` when a tool may not change `file`.
+    func requireWritable(_ file: String) throws {
+        if ownReadOnly { throw EditorToolError(.readOnly, "bundled examples; copy them to a folder first") }
+        if file.hasPrefix("vendor/") { throw EditorToolError(.readOnly, "\(file) is vendored code") }
+        if !Self.isWritablePath(file) { throw EditorToolError(.readOnly, "\(file) is not a writable Synod file") }
+    }
+
+    /// Opens a buffer for a tool; a file that does not exist is `not-found`.
+    func openForTools(_ file: String) throws -> EditorDocument {
+        do { return try open(file: file) } catch { throw EditorToolError(.notFound, "\(file) does not exist or is not text") }
+    }
+
+    /// Applies non-overlapping edits (1-based lines, code-point columns, ends exclusive) to one buffer
+    /// as one undo group named "Claude Edit". `version` must be the buffer's current one.
+    @discardableResult
+    func applyEdits(path file: String, version: Int, edits: [EditorTextEdit], actionName: String = "Claude Edit") throws -> Int {
+        try requireWritable(file)
+        let doc = try openForTools(file)
+        guard doc.version == version else {
+            throw EditorToolError(.versionMismatch, "buffer is at version \(doc.version); read it again")
+        }
+        let positions = doc.positions
+        var resolved: [TextEdit] = []
+        for (i, e) in edits.enumerated() {
+            guard let a = positions.utf16Offset(line: e.line, col: e.col), let b = positions.utf16Offset(line: e.endLine, col: e.endCol), b >= a else {
+                throw EditorToolError(.badRange, "edit \(i + 1) is outside the text or ends before it starts")
+            }
+            resolved.append(TextEdit(range: NSRange(location: a, length: b - a), replacement: e.text))
+        }
+        let ascending = resolved.sorted {
+            $0.range.location != $1.range.location ? $0.range.location < $1.range.location : $0.range.length < $1.range.length
+        }
+        for (a, b) in zip(ascending, ascending.dropFirst()) {
+            if NSMaxRange(a.range) > b.range.location || (a.range.location == b.range.location && a.range.length == 0 && b.range.length == 0) {
+                throw EditorToolError(.badRange, "edits overlap")
+            }
+        }
+        let removed = ascending.reduce(0) { $0 + $1.range.length }
+        let added = ascending.reduce(0) { $0 + $1.replacementLength }
+        if positions.utf16Length - removed + added > 1_048_576 { throw EditorToolError(.tooLarge, "the buffer would be larger than 1 MB") }
+        doc.apply(Array(ascending.reversed()), actionName: actionName)
+        return doc.version
+    }
+
+    /// Replaces a buffer's whole text as one undo group named "Claude Edit". `version` must be current.
+    @discardableResult
+    func replaceBuffer(path file: String, version: Int, text: String, actionName: String = "Claude Edit") throws -> Int {
+        try requireWritable(file)
+        let doc = try openForTools(file)
+        guard doc.version == version else {
+            throw EditorToolError(.versionMismatch, "buffer is at version \(doc.version); read it again")
+        }
+        doc.replaceText(with: text, actionName: actionName)
+        return doc.version
+    }
+
+    /// Creates a new file on disk (atomic write, missing folders created), runs `synod fmt` on it and opens it.
+    func createFile(path file: String, text: String) async throws -> (version: Int, formatted: Bool) {
+        try requireWritable(file)
+        guard file.hasSuffix(".synod") else { throw EditorToolError(.badArguments, "create_file makes .synod files only") }
+        let url = workspace.url(forRelative: file)
+        if FileManager.default.fileExists(atPath: url.path) || documents[Self.key(file, .own)] != nil {
+            throw EditorToolError(.exists, "\(file) already exists")
+        }
+        do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(text.utf8).write(to: url, options: .atomic)
+        } catch {
+            throw EditorToolError(.badArguments, "cannot write \(file): \(error.localizedDescription)")
+        }
+        var formatted = false
+        if let runner = runner(),
+           case .formatted(let changed)? = try? await SynodCore.Formatter(workspace: workspace, runner: runner).format(relativePath: file) {
+            formatted = changed
+        }
+        try show(file: file)
+        return (documents[Self.key(file, .own)]?.version ?? 0, formatted)
+    }
+
+    /// Checks the whole module including the unsaved buffers. When the check takes longer than `timeout`
+    /// the previous report comes back with `stale` true.
+    func checkModule(timeout: Duration = .seconds(5)) async throws -> (report: CheckReport?, stale: Bool) {
+        guard let runner = runner() else { throw EditorError.noCompiler }
+        let checker = OverlayChecker(workspace: workspace, runner: runner, cache: cache)
+        var buffers: [String: String] = [:]
+        for d in documents.values where d.origin == .own && d.isDirty && !d.isReadOnly { buffers[d.file] = d.text }
+        let given = buffers
+        let fresh: CheckReport? = try await withThrowingTaskGroup(of: CheckReport?.self) { group in
+            group.addTask { try await checker.check(target: ".", buffers: given) }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                return nil
+            }
+            let first = try await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+        if let fresh {
+            moduleReport = fresh
+            return (fresh, false)
+        }
+        return (moduleReport, true)
+    }
+
+    /// Forgets a buffer (the file was removed by a revert).
+    func closeDocument(file: String, origin: Origin = .own) {
+        guard let doc = documents.removeValue(forKey: Self.key(file, origin)) else { return }
+        doc.onEdit = nil
+        if current === doc { current = nil }
+    }
+
+    /// Takes the disk text into every open buffer of the workspace, dropping unsaved edits and undo history;
+    /// buffers whose file is gone are closed (Revert).
+    func discardEditsAndReload() {
+        for doc in Array(documents.values) where doc.origin == .own {
+            if let disk = try? String(contentsOf: doc.url, encoding: .utf8) {
+                doc.reload(from: disk)
+            } else {
+                closeDocument(file: doc.file, origin: .own)
+            }
+        }
+        scheduleCheck(after: .zero)
     }
 
     // MARK: Line highlight (Break it)

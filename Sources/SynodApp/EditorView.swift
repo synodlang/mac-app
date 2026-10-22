@@ -5,6 +5,17 @@ import SynodCore
 /// The text view: ⌘-click goes to a definition, paste is always plain text.
 final class SynodTextView: NSTextView {
     var onCommandClick: ((Int) -> Bool)?
+    /// ⌃Space: opens the completion list anywhere.
+    var onControlSpace: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        let mods = event.modifierFlags.intersection([.control, .command, .option, .shift])
+        if event.keyCode == 49, mods == .control, let onControlSpace {
+            onControlSpace()
+            return
+        }
+        super.keyDown(with: event)
+    }
 
     override func mouseDown(with event: NSEvent) {
         if event.modifierFlags.contains(.command), !event.modifierFlags.contains(.shift) {
@@ -148,6 +159,8 @@ final class EditorContainer: NSView {
 struct EditorTextView: NSViewRepresentable {
     let model: EditorModel
     let document: EditorDocument
+    /// The user cannot type while a prompt-bar request runs.
+    var locked = false
 
     func makeCoordinator() -> Coordinator { Coordinator(model: model, document: document) }
 
@@ -163,7 +176,7 @@ struct EditorTextView: NSViewRepresentable {
         tv.allowsUndo = true
         tv.isRichText = true
         tv.importsGraphics = false
-        tv.isEditable = !document.isReadOnly
+        tv.isEditable = !document.isReadOnly && !model.userLocked
         tv.isSelectable = true
         tv.isAutomaticQuoteSubstitutionEnabled = false
         tv.isAutomaticDashSubstitutionEnabled = false
@@ -209,7 +222,7 @@ struct EditorTextView: NSViewRepresentable {
 
     func updateNSView(_ container: EditorContainer, context: Context) {
         guard let tv = container.scroll.documentView as? SynodTextView else { return }
-        let editable = !document.isReadOnly
+        let editable = !document.isReadOnly && !locked
         if tv.isEditable != editable { tv.isEditable = editable }
         context.coordinator.handleReveal(model.reveal)
     }
@@ -226,6 +239,9 @@ struct EditorTextView: NSViewRepresentable {
         private weak var gutter: EditorGutter?
         private var lastReveal = 0
         private var scrollObserver: NSObjectProtocol?
+        private var popup: CompletionPopup?
+        /// The last change came from typing (not from a completion, undo or a tool).
+        private var typed = false
 
         init(model: EditorModel, document: EditorDocument) {
             self.model = model
@@ -236,6 +252,9 @@ struct EditorTextView: NSViewRepresentable {
             textView = tv
             self.gutter = gutter
             tv.onCommandClick = { [weak self] idx in self?.goToDefinition(idx) ?? false }
+            tv.onControlSpace = { [weak self] in self?.triggerCompletion() }
+            model.triggerCompletion = { [weak self] in self?.triggerCompletion() }
+            document.onPlaceholdersChanged = { [weak self] in self?.drawPlaceholders() }
             gutter.onFixes = { [weak self] fixes, point in
                 guard let self, let gutter = self.gutter else { return }
                 self.presentMenu(fixes, at: point, in: gutter)
@@ -252,9 +271,15 @@ struct EditorTextView: NSViewRepresentable {
                 forName: NSView.boundsDidChangeNotification, object: scroll.contentView, queue: .main
             ) { [weak gutter] _ in MainActor.assumeIsolated { gutter?.needsDisplay = true } }
             tv.setSelectedRange(document.selection)
+            drawPlaceholders()
         }
 
         func detach() {
+            popup?.hide()
+            popup = nil
+            model.completion?.dismiss()
+            model.triggerCompletion = nil
+            document.onPlaceholdersChanged = nil
             if let scrollObserver { NotificationCenter.default.removeObserver(scrollObserver) }
             document.selectionSink = nil
             document.onHighlightNeeded = nil
@@ -266,7 +291,106 @@ struct EditorTextView: NSViewRepresentable {
         func undoManager(for view: NSTextView) -> UndoManager? { document.undoManager }
 
         func textViewDidChangeSelection(_ notification: Notification) {
-            if let tv = textView { document.selection = tv.selectedRange() }
+            guard let tv = textView else { return }
+            document.selection = tv.selectedRange()
+            if let c = model.completion, c.isOpen {
+                c.update(in: document, caret: tv.selectedRange().location)
+                syncPopup()
+            }
+        }
+
+        // MARK: Completion
+
+        func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
+            typed = !(replacementString ?? "").isEmpty
+            return true
+        }
+
+        func textDidChange(_ notification: Notification) {
+            defer { typed = false }
+            guard let tv = textView, let c = model.completion, tv.selectedRange().length == 0 else { return }
+            let caret = tv.selectedRange().location
+            if c.isOpen {
+                c.update(in: document, caret: caret)
+                syncPopup()
+            } else if typed, document.placeholders.isEmpty,
+                      CompletionController.shouldAutoOpen(text: document.text, caret: caret) {
+                c.update(in: document, caret: caret)
+                syncPopup()
+            }
+        }
+
+        func textDidEndEditing(_ notification: Notification) {
+            model.completion?.dismiss()
+            syncPopup()
+        }
+
+        func textView(_ textView: NSTextView, doCommandBy sel: Selector) -> Bool {
+            if let c = model.completion, c.isOpen {
+                switch sel {
+                case #selector(NSResponder.moveUp(_:)): c.move(-1); syncPopup(); return true
+                case #selector(NSResponder.moveDown(_:)): c.move(1); syncPopup(); return true
+                case #selector(NSResponder.insertNewline(_:)), #selector(NSResponder.insertTab(_:)): acceptCompletion(); return true
+                case #selector(NSResponder.cancelOperation(_:)), #selector(NSResponder.complete(_:)):
+                    c.dismiss(); syncPopup(); return true
+                default: return false
+                }
+            }
+            if !document.placeholders.isEmpty {
+                switch sel {
+                case #selector(NSResponder.insertTab(_:)):
+                    if let r = document.placeholders.next() { document.requestSelection(r) }
+                    return true
+                case #selector(NSResponder.insertBacktab(_:)):
+                    if let r = document.placeholders.previous() { document.requestSelection(r) }
+                    return true
+                case #selector(NSResponder.cancelOperation(_:)), #selector(NSResponder.complete(_:)):
+                    document.clearPlaceholders()
+                    return true
+                default: break
+                }
+            }
+            return false
+        }
+
+        func triggerCompletion() {
+            guard let tv = textView, let c = model.completion, !document.isReadOnly, !model.userLocked else { return }
+            c.update(in: document, caret: tv.selectedRange().location, force: true)
+            syncPopup()
+        }
+
+        private func acceptCompletion() {
+            guard let c = model.completion else { return }
+            c.accept(into: document)
+            syncPopup()
+        }
+
+        private func syncPopup() {
+            guard let tv = textView, let c = model.completion else { return }
+            if popup == nil {
+                let p = CompletionPopup(controller: c)
+                p.onAccept = { [weak self] in self?.acceptCompletion() }
+                popup = p
+            }
+            var anchor: NSRect?
+            if c.isOpen, let req = c.request {
+                anchor = tv.firstRect(forCharacterRange: NSRange(location: req.replaceRange.location, length: 0), actualRange: nil)
+            }
+            popup?.sync(anchor: anchor, in: tv.window)
+        }
+
+        /// Draws the holes that still show their name as a quiet background (never written as text).
+        private func drawPlaceholders() {
+            guard let tv = textView, let tlm = tv.textLayoutManager, let cs = tv.textContentStorage else { return }
+            tlm.removeRenderingAttribute(.backgroundColor, for: tlm.documentRange)
+            let length = document.storage.length
+            for r in document.placeholders.unfilledRanges where NSMaxRange(r) <= length {
+                let base = cs.documentRange.location
+                if let a = cs.location(base, offsetBy: r.location), let b = cs.location(a, offsetBy: r.length),
+                   let tr = NSTextRange(location: a, end: b) {
+                    tlm.addRenderingAttribute(.backgroundColor, value: EditorPalette.quiet.color.withAlphaComponent(0.28), for: tr)
+                }
+            }
         }
 
         // MARK: Navigation
@@ -359,7 +483,7 @@ struct EditorPane: View {
                 EditorHeader(model: model, doc: doc)
                 EditorBanners(model: model, doc: doc)
                 Divider()
-                EditorTextView(model: editor, document: doc)
+                EditorTextView(model: editor, document: doc, locked: editor.userLocked)
                     .id(doc.id)
             } else {
                 ContentUnavailableView("No file", systemImage: "doc.text", description: Text("Select a program, a package or a problem."))
@@ -396,8 +520,9 @@ struct EditorHeader: View {
             let warnings = doc.marks.filter { $0.kind == .warning }.count
             if errors > 0 { Label("\(errors)", systemImage: "xmark.octagon.fill").foregroundStyle(.red).font(.caption) }
             if warnings > 0 { Label("\(warnings)", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.caption) }
+            if editor.userLocked { Label("Claude is editing", systemImage: "sparkles").font(.caption).foregroundStyle(.secondary) }
             Button("Save") { editor.saveCurrent() }
-                .disabled(doc.isReadOnly || (!doc.isDirty))
+                .disabled(doc.isReadOnly || (!doc.isDirty) || editor.userLocked)
                 .help("Save and format (⌘S)")
         }
         .padding(.horizontal, 8).padding(.vertical, 5)

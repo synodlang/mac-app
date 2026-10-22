@@ -140,6 +140,10 @@ final class EditorDocument: Identifiable {
     @ObservationIgnored var onEdit: (() -> Void)?
     /// Called when the look should be redone (tokens or marks changed).
     @ObservationIgnored var onHighlightNeeded: (() -> Void)?
+    /// The holes of the phrase the last completion inserted (decision 92); edits move or clear them.
+    @ObservationIgnored var placeholders = PlaceholderSet()
+    /// Called when `placeholders` changed, for the view to redraw them.
+    @ObservationIgnored var onPlaceholdersChanged: (() -> Void)?
 
     @ObservationIgnored private let storageDelegate = StorageDelegate()
     @ObservationIgnored private var positionsCache: (version: Int, positions: TextPositions)?
@@ -191,6 +195,10 @@ final class EditorDocument: Identifiable {
         let old = NSRange(location: editedRange.location, length: editedRange.length - delta)
         tokens = TokenShifter.shift(tokens, replacing: old, withLength: editedRange.length)
         marks = EditorLogic.shift(marks, replacing: old, withLength: editedRange.length)
+        if !placeholders.isEmpty {
+            placeholders.apply(replacing: old, withLength: editedRange.length)
+            onPlaceholdersChanged?()
+        }
         // Inserted text starts plain; the next highlight colors it from the shifted tokens.
         storage.setAttributes(EditorHighlighter.baseAttributes, range: editedRange)
         version += 1
@@ -250,6 +258,12 @@ final class EditorDocument: Identifiable {
     }
 
     func setReadOnly(_ value: Bool) { isReadOnly = value }
+
+    func clearPlaceholders() {
+        guard !placeholders.isEmpty else { return }
+        placeholders.clear()
+        onPlaceholdersChanged?()
+    }
 
     func requestSelection(_ range: NSRange) {
         selection = range
