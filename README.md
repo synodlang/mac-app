@@ -5,7 +5,41 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 [![ci](https://github.com/synodlang/mac-app/actions/workflows/ci.yml/badge.svg)](https://github.com/synodlang/mac-app/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-**Status: designed, not yet written.** This repository has no code yet. The app arrives over milestones M8 (open a workspace, run, play, timeline, inspector, video export), M9 (editor, Predict, Break it, Compare) and M10 (Claude integration) of the [roadmap](https://github.com/synodlang/dsl/blob/main/implementation/10-roadmap.md). It depends on the scene builder (M5) and the player (M7). Everything below is the plan from [06-mac-app.md](https://github.com/synodlang/dsl/blob/main/implementation/06-mac-app.md) and [07-claude-integration.md](https://github.com/synodlang/dsl/blob/main/implementation/07-claude-integration.md).
+## Status
+
+**v0.2.0 is in development.** The package, build scripts, CI and release skeleton are in place; the app is a stub window until the M8 work lands. The app arrives over milestones M8 (open a workspace, run, play, timeline, inspector, video export), M9 (editor, Predict, Break it, Compare) and M10 (Claude integration) of the [roadmap](https://github.com/synodlang/dsl/blob/main/implementation/10-roadmap.md). Everything below the install and build sections is the plan from [06-mac-app.md](https://github.com/synodlang/dsl/blob/main/implementation/06-mac-app.md) and [07-claude-integration.md](https://github.com/synodlang/dsl/blob/main/implementation/07-claude-integration.md).
+
+## Install
+
+Download `Synod-<tag>-macos.zip` and `SHA256SUMS` from the [releases](https://github.com/synodlang/mac-app/releases), then verify and unpack:
+
+```sh
+shasum -a 256 -c SHA256SUMS
+unzip Synod-*-macos.zip && mv Synod.app /Applications/
+```
+
+The app is ad-hoc signed but not notarized. On macOS 15 and later, right-click then Open no longer bypasses Gatekeeper. Either open System Settings, Privacy & Security, and choose "Open Anyway" after the first blocked launch, or remove the quarantine flag:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Synod.app
+```
+
+A Homebrew cask and Developer ID notarization may follow.
+
+## Build
+
+You need macOS 15 or later and Xcode 27 (Swift 6.2 tools or newer). There is no Xcode project; the app is a Swift package.
+
+```sh
+scripts/fetch-deps.sh   # downloads and verifies the pinned synod, player and examples into .deps/
+swift build
+swift test
+scripts/bundle.sh       # builds build/Synod.app (universal, ad-hoc signed)
+scripts/smoke.sh        # plays every bundled example headlessly (needs the app's --smoke flag)
+scripts/acceptance.sh   # Raft 1080p60 export check (needs the app's --acceptance flag)
+```
+
+`deps.env` pins the bundled `synod` release, player release and examples commit, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.0` prints the CHANGELOG section used as release notes.
 
 ## Where it fits
 
@@ -20,10 +54,10 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 | Repository | What it is | Status |
 | --- | --- | --- |
 | [dsl](https://github.com/synodlang/dsl) | The language specification and implementation guides | Spec v0.2 |
-| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run` | v0.2.2 released |
+| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run` | v0.2.4 released |
 | [std](https://github.com/synodlang/std) | The standard library packages | In use by the compiler |
 | [examples](https://github.com/synodlang/examples) | Sample programs and acceptance tests | Available |
-| [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | Planned (M7) |
+| [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.0 released |
 | **mac-app** (this repository) | The Mac app | Planned (M8, M9, M10) |
 | [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | Planned (M10) |
 | [synodlang.github.io](https://github.com/synodlang/synodlang.github.io) | The website and documentation | Install page live; rest planned (M11) |
@@ -72,7 +106,7 @@ A workspace is a folder with `synod.mod`. The app stores Synod code nowhere else
 
 ## Contributing
 
-There is nothing to build yet. If you want to help before the code exists, read the two design documents above and open an issue or a pull request in [dsl](https://github.com/synodlang/dsl) when something is unclear. This repository's CI today checks line endings, trailing spaces and the final newline. Swift build and test jobs will be added with the first code.
+See Build above. CI checks line endings, trailing spaces and the final newline of text files, builds and tests the package on macOS, bundles the app and uploads it. If something in the design is unclear, open an issue or a pull request in [dsl](https://github.com/synodlang/dsl).
 
 To try Synod today, [install the `synod` command](https://synodlang.github.io/install/).
 

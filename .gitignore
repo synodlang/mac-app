@@ -1,0 +1,8 @@
+.build/
+.deps/
+build/
+dist/
+acc/
+.DS_Store
+*.xcodeproj
+smoke.json

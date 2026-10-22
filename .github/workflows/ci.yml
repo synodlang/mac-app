@@ -3,6 +3,8 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
   pull_request:
     branches: [main]
 
@@ -34,8 +36,80 @@ jobs:
               echo "::error file=$f::missing newline at end of file"
               status=1
             fi
-          done < <(git ls-files -z -- '*.md' '*.swift')
+          done < <(git ls-files -z -- '*.md' '*.swift' '*.sh' '*.yml' '*.html' '*.js' '*.in' '*.env')
           echo "Checked $count file(s)."
           exit $status
 
-  # Later: Swift build and tests (xcodebuild on macos runners).
+  build-test:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode_27.1.app ]; then
+            sudo xcode-select -s /Applications/Xcode_27.1.app
+          fi
+          swift --version
+      - uses: actions/cache@v4
+        with:
+          path: .deps
+          key: deps-${{ hashFiles('deps.env') }}
+      - name: Fetch dependencies
+        run: scripts/fetch-deps.sh
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
+      # TODO(task B): add scripts/sync-fixtures.sh --check once it exists, with the
+      # compiler repository checked out at the pinned tag into ./compiler.
+      - name: Bundle
+        run: scripts/bundle.sh
+      - name: Verify signature
+        run: codesign --verify --deep --strict build/Synod.app
+      - name: Smoke test (every example plays)
+        # TODO(task D): remove continue-on-error once --smoke is implemented.
+        continue-on-error: true
+        run: scripts/smoke.sh build/Synod.app smoke.json
+      - name: Acceptance on tcp (pull requests)
+        if: github.event_name == 'pull_request'
+        # TODO(task E): short tcp-only run; remove continue-on-error once implemented.
+        continue-on-error: true
+        run: scripts/acceptance.sh build/Synod.app acc
+      - name: Package app
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent build/Synod.app dist/Synod-ci-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Synod-app
+          path: dist/Synod-ci-macos.zip
+
+  acceptance:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
+    needs: build-test
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode_27.1.app ]; then
+            sudo xcode-select -s /Applications/Xcode_27.1.app
+          fi
+      - uses: actions/cache@v4
+        with:
+          path: .deps
+          key: deps-${{ hashFiles('deps.env') }}
+      - run: scripts/fetch-deps.sh
+      - run: scripts/bundle.sh
+      - name: Raft 1080p60 export acceptance
+        # TODO(task E): remove continue-on-error once --acceptance is implemented.
+        continue-on-error: true
+        run: scripts/acceptance.sh build/Synod.app acc
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance
+          path: acc
+          if-no-files-found: ignore
