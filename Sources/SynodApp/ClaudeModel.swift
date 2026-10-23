@@ -51,6 +51,10 @@ final class ClaudeModel {
     /// False while Settings has the prompt bar off: nothing is ever launched then.
     @ObservationIgnored var isEnabled: () -> Bool = { true }
     @ObservationIgnored var hub: EditorMCPHub = .shared
+    /// Dev aid (`--claude-live`): sees every raw stdout line, and the exit with its stderr.
+    @ObservationIgnored var rawLineTap: (@Sendable (String) -> Void)?
+    @ObservationIgnored var exitTap: (@Sendable (ClaudeProcess.Exit) -> Void)?
+    @ObservationIgnored var argvTap: (@Sendable (ClaudeInvocation) -> Void)?
     @ObservationIgnored private var process: ClaudeProcess?
     @ObservationIgnored private var snapshot: WorkspaceSnapshot?
     @ObservationIgnored private var task: Task<Void, Never>?
@@ -145,6 +149,7 @@ final class ClaudeModel {
         let invocation = ClaudeInvocation(
             claude: cfg.claude, request: request, workingDirectory: root, mcpConfig: session.config.url, skillsFolder: cfg.skills,
             skillMarkdown: skill, synod: cfg.synod, model: cfg.model, sessionID: sessionID, hostEnvironment: cfg.host)
+        argvTap?(invocation)
         let proc = ClaudeProcess(invocation, timeout: cfg.timeout, stopTiming: cfg.stopTiming)
         process = proc
         task = Task { [weak self] in await self?.run(proc, session: session, root: root) }
@@ -160,7 +165,9 @@ final class ClaudeModel {
         var exit: ClaudeProcess.Exit?
         var launchError: String?
         do {
-            exit = try await proc.run { line in continuation.yield(parser.parse(line: line)) }
+            let tap = rawLineTap
+            exit = try await proc.run { line in tap?(line); continuation.yield(parser.parse(line: line)) }
+            if let exit { exitTap?(exit) }
         } catch {
             launchError = error.localizedDescription
         }

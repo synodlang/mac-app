@@ -10,6 +10,7 @@ enum HeadlessCommands {
         if args.contains("--stage-check") { return await StageCheck.run(args) }
         if args.contains("--editor-check") { return await HeadlessEditor.run(args) }
         if args.contains("--completion-check") { return await HeadlessCompletion.run(args) }
+        if args.contains("--claude-live") { return await HeadlessClaudeLive.run(args) }
         if args.contains("--claude-check") { return await HeadlessClaude.run(args) }
         if args.contains("--mcp-check") { return await HeadlessMCP.run(args) }
         if args.contains("--predict-check") { return await HeadlessLearning.predictCheck(args) }

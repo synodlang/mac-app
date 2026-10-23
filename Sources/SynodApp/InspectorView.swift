@@ -109,6 +109,10 @@ struct InspectorView: View {
             }
             .onChange(of: seq) { _, s in proxy.scrollTo(s, anchor: .center) }
         }
+        // A long list must scroll inside the column, never grow the window's content past the window
+        // (it pushed the prompt bar out of view).
+        .frame(minHeight: 80, maxHeight: .infinity)
+        .layoutPriority(-1)
     }
 
     private func color(_ s: NodeStatus?) -> Color {

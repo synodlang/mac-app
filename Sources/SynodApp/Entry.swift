@@ -7,7 +7,7 @@ import AppKit
 enum Entry {
     static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export", "--stage-check", "--editor-check",
                                           "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check", "--m9", "--m10",
-                                          "--completion-check", "--claude-check", "--mcp-check"]
+                                          "--completion-check", "--claude-check", "--mcp-check", "--claude-live"]
 
     static let helpText = """
     Synod: the Mac app for the Synod language.
@@ -31,6 +31,8 @@ enum Entry {
             phrase completion on a temporary copy: the scope of every file, net.Se with placeholders, receivers, timings
       Synod --claude-check <module> [--claude <fake-claude>] [--skills <agent-skills>] [--report f]
             the prompt bar against the built fake-claude: argv, environment, MCP edits, banner, Revert, Stop
+      Synod --claude-live <module> --request "<text>" [--model m] [--timeout s]
+            dev aid: runs the real prompt-bar path against your own Claude Code on a temporary copy, printing argv, every stream-json line, stderr and the exit status
       Synod --mcp-check <module> [--bridge <synod-editor-mcp>] [--golden tools.json] [--report f]
             the editor MCP server through the built bridge on a temporary copy: tools, edits, save, tokens, no TCP listener
       Synod --predict-check <module> [--program p] [--report f]
