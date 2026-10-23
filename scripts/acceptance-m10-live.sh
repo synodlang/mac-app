@@ -39,11 +39,20 @@ result() { # result <PASS|FAIL|CHECK> <text>
 ask() { # ask <question>; yes when the owner types y
   local a
   printf '%s [y/n] ' "$1"
-  read -r a < /dev/tty || a=n
+  read -r a < /dev/tty || die "no answer could be read from the terminal; nothing was recorded for: $1"
   printf '%s -> %s\n' "$1" "$a" >> "$report"
   [ "$a" = y ]
 }
-pause() { printf '%s ' "$1"; read -r _ < /dev/tty || true; }
+pause() { printf '%s ' "$1"; read -r _ < /dev/tty || die "no terminal to read from"; }
+# The interactive sections record what a person typed; without a terminal they must not run (a missing
+# answer must never be recorded as "n").
+need_tty() {
+  if [ ! -t 0 ] || [ ! -r /dev/tty ] || ! : < /dev/tty 2>/dev/null; then
+    say "NOT RUN: the interactive part needs a terminal (stdin is not a TTY). Run this script yourself in Terminal."
+    echo "acceptance-m10-live: no TTY; run it in Terminal so your answers can be recorded" >&2
+    exit 2
+  fi
+}
 
 [ -x "$synod" ] || die "$synod not found; run scripts/bundle.sh first"
 [ -x "$exe" ] || die "$exe not found"
@@ -53,12 +62,13 @@ work="$(mktemp -d "${TMPDIR:-/tmp}/synod-m10-live.XXXXXX")"
 cleanup() { claude mcp remove synod --scope local >/dev/null 2>&1 || true; rm -rf "$work"; }
 trap cleanup EXIT
 
+need_tty
 step "1. Claude Code version and flag spellings"
 cver="$(claude --version 2>&1 | head -1)"
 say "claude --version: $cver"
 help="$(claude --help 2>&1)"
 for flag in -p --output-format --verbose --append-system-prompt --add-dir --mcp-config --strict-mcp-config \
-            --allowedTools --disallowedTools --model --resume; do
+            --tools --allowedTools --disallowedTools --model --resume; do
   if printf '%s' "$help" | grep -q -- "$flag"; then result PASS "claude --help lists $flag"; else result FAIL "claude --help does not list $flag"; fi
 done
 if printf '%s' "$help" | grep -qi 'stream-json'; then result PASS "stream-json is an output format"; else result CHECK "stream-json not named in --help"; fi
@@ -193,7 +203,7 @@ for run in 1 2 3; do
   say "When Claude finishes, the banner shows the changed files and the new program plays."
   pause "Press Return when the request has finished (or failed)."
   if ask "Did the request finish without an error banner?"; then result PASS "the result is not an error"; else result FAIL "the request ended in an error"; fi
-  if ask "Did the progress lines show mcp__synod-editor__ calls and no Write or Edit?"; then result PASS "transcript uses the editor tools only"; else result FAIL "transcript shows Write or Edit, or no editor tools"; fi
+  if ask "Did the progress lines show mcp__synod-editor__ calls and no Write, Edit, Bash or Agent?"; then result PASS "transcript uses the editor tools only"; else result FAIL "transcript shows Write or Edit, or no editor tools"; fi
   if ask "Was the new program saved by Claude (the buffer is not dirty and the file is on disk)?"; then result PASS "saved through save_files"; else result CHECK "unsaved: press Save All, then continue"; fi
   say "Checking the module with the bundled compiler:"
   if check_run "$m" "$before" "$sumhash" "$vhash"; then result PASS "run $run passes"; passed=$((passed + 1)); else result FAIL "run $run fails"; fi

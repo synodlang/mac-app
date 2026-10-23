@@ -22,8 +22,9 @@ private let systemPrompt = "# Synod\n\nUse rules.\n\nThe reference files are in 
         "--append-system-prompt", systemPrompt,
         "--add-dir", "/skills/skills/synod",
         "--mcp-config", "/tmp/synod-mcp-ab/claude-1.json", "--strict-mcp-config",
-        "--allowedTools", "Read,Glob,Grep,mcp__synod-editor__*,mcp__synod__doc,mcp__synod__explain,mcp__synod__check,mcp__synod__run_summary,Bash(synod get:*)",
-        "--disallowedTools", "Write,Edit,MultiEdit,NotebookEdit,WebFetch,WebSearch,mcp__synod__fmt",
+        "--tools", "Read,Glob,Grep",
+        "--allowedTools", "Read,Glob,Grep,mcp__synod-editor__*,mcp__synod__doc,mcp__synod__explain,mcp__synod__check,mcp__synod__run_summary",
+        "--disallowedTools", "Write,Edit,MultiEdit,NotebookEdit,WebFetch,WebSearch,Bash,Agent,Task,mcp__synod__fmt",
     ])
 }
 
@@ -38,7 +39,10 @@ private let systemPrompt = "# Synod\n\nUse rules.\n\nThe reference files are in 
 @Test func toolListsExcludeWritingAndShell() {
     let allowed = ClaudeInvocation.allowedTools.split(separator: ",").map(String.init)
     for banned in ["Write", "Edit", "Bash", "WebFetch"] { #expect(!allowed.contains(banned)) }
-    #expect(allowed.filter { $0.hasPrefix("Bash") } == ["Bash(synod get:*)"])
+    #expect(allowed.filter { $0.hasPrefix("Bash") }.isEmpty)
+    #expect(ClaudeInvocation.builtinTools.split(separator: ",").map(String.init) == ["Read", "Glob", "Grep"])
+    let denied = ClaudeInvocation.disallowedTools.split(separator: ",").map(String.init)
+    for must in ["Write", "Edit", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch", "Bash", "Agent", "Task"] { #expect(denied.contains(must)) }
     #expect(ClaudeInvocation.disallowedTools.contains("mcp__synod__fmt"))
 }
 

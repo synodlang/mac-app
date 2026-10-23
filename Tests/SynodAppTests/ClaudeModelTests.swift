@@ -127,6 +127,9 @@ private func makeFake(_ script: [String: Any], in dir: URL) throws -> (wrapper: 
         #expect(await model.claude.send("do it") == .started)
         #expect(model.editor.userLocked)
         #expect(await model.claude.waitUntilIdle(timeout: 60))
+        // isRunning turns false before the request's changes are worked out, so wait for them (bounded).
+        let settled = await poll(timeout: 30) { model.claude.hasBanner && !model.editor.userLocked && model.claude.finalText != nil }
+        #expect(settled)
         #expect(!model.editor.userLocked)
         #expect(model.claude.progress == ["Read main/main.synod", "Edited main/main.synod", "Created extra/extra.synod"])
         #expect(model.claude.finalText == "all done")
@@ -140,13 +143,27 @@ private func makeFake(_ script: [String: Any], in dir: URL) throws -> (wrapper: 
         #expect(model.claude.changed == ["extra/extra.synod", "main/main.synod"])
         #expect(model.claude.unsavedLeft && model.claude.canRevert)
         // Nothing of the session is left behind.
-        #expect(await !hub.listener.isListening)
+        let listenerGone = await pollAsync(timeout: 10) { await !hub.listener.isListening }
+        #expect(listenerGone)
         #expect(await hub.table.count == 0)
         // Revert drops the unsaved edit and removes the added file.
         model.claude.revert()
         #expect(doc.text == original && !doc.isDirty)
         #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("extra").path))
         #expect(model.claude.changed.isEmpty)
+    }
+
+    /// Polls `condition` every 20 ms until it holds or `timeout` seconds pass.
+    private func poll(timeout: Double, _ condition: @MainActor () -> Bool) async -> Bool {
+        let end = ContinuousClock.now + .milliseconds(Int(timeout * 1000))
+        while !condition(), ContinuousClock.now < end { try? await Task.sleep(for: .milliseconds(20)) }
+        return condition()
+    }
+
+    private func pollAsync(timeout: Double, _ condition: () async -> Bool) async -> Bool {
+        let end = ContinuousClock.now + .milliseconds(Int(timeout * 1000))
+        while await !condition(), ContinuousClock.now < end { try? await Task.sleep(for: .milliseconds(20)) }
+        return await condition()
     }
 
     @Test func newConversationForgetsTheSession() async throws {

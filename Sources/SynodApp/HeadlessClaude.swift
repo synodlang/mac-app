@@ -234,12 +234,15 @@ enum HeadlessClaude {
                                         skillsFolder: skills, skillMarkdown: skillMarkdown, synod: synod, model: ClaudeInvocation.defaultModel).arguments
             let got = log["argv"] as? [String] ?? []
             if got != want { fail(&argv, "argv differs: \(zip(got, want).first { $0 != $1 }.map { "\($0) vs \($1)" } ?? "length \(got.count) vs \(want.count)")") }
-            for needle in ["--mcp-config", "--strict-mcp-config", "--allowedTools", "--disallowedTools"] where !got.contains(needle) { fail(&argv, "no \(needle)") }
-            // fake-claude splits the lists on commas and spaces, so `Bash(synod get:*)` arrives in two pieces.
+            for needle in ["--mcp-config", "--strict-mcp-config", "--tools", "--allowedTools", "--disallowedTools"] where !got.contains(needle) { fail(&argv, "no \(needle)") }
+            // fake-claude splits the lists on commas and spaces.
             func pieces(_ list: String) -> [String] { list.split(whereSeparator: { $0 == "," || $0 == " " }).map(String.init) }
             if (log["allowedTools"] as? [String]) != pieces(ClaudeInvocation.allowedTools) { fail(&argv, "allowed tools differ") }
             if (log["disallowedTools"] as? [String]) != pieces(ClaudeInvocation.disallowedTools) { fail(&argv, "disallowed tools differ") }
-            if pieces(ClaudeInvocation.allowedTools).contains(where: { $0 == "Write" || $0 == "Edit" }) { fail(&argv, "Write or Edit is allowed") }
+            if pieces(ClaudeInvocation.allowedTools).contains(where: { $0 == "Write" || $0 == "Edit" || $0.hasPrefix("Bash") || $0 == "Agent" }) { fail(&argv, "Write, Edit, Bash or Agent is allowed") }
+            if let i = got.firstIndex(of: "--tools"), i + 1 < got.count, got[i + 1] != ClaudeInvocation.builtinTools { fail(&argv, "--tools is \(got[i + 1])") }
+            let deniedTools = Set(pieces(ClaudeInvocation.disallowedTools))
+            for must in ["Write", "Edit", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch", "Bash", "Agent", "Task"] where !deniedTools.contains(must) { fail(&argv, "\(must) is not denied") }
             let cwd = URL(fileURLWithPath: log["cwd"] as? String ?? "").resolvingSymlinksInPath().path
             if cwd != root.resolvingSymlinksInPath().path { fail(&argv, "cwd is \(cwd)") }
             let env = log["env"] as? [String: String] ?? [:]

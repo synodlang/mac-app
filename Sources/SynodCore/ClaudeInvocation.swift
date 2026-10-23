@@ -3,8 +3,11 @@ import Foundation
 /// How the app runs the user's `claude` (plan 1.6 with addendum A6). Pure: it only builds the
 /// program, argument list, environment and working directory.
 public struct ClaudeInvocation: Sendable, Equatable {
-    public static let allowedTools = "Read,Glob,Grep,mcp__synod-editor__*,mcp__synod__doc,mcp__synod__explain,mcp__synod__check,mcp__synod__run_summary,Bash(synod get:*)"
-    public static let disallowedTools = "Write,Edit,MultiEdit,NotebookEdit,WebFetch,WebSearch,mcp__synod__fmt"
+    /// The built-in tools that exist at all (`--tools` restricts the set; `--allowedTools` only pre-approves).
+    /// MCP tools are not built-in, so the lists below still govern them. No Bash: `synod get` is the user's step.
+    public static let builtinTools = "Read,Glob,Grep"
+    public static let allowedTools = "Read,Glob,Grep,mcp__synod-editor__*,mcp__synod__doc,mcp__synod__explain,mcp__synod__check,mcp__synod__run_summary"
+    public static let disallowedTools = "Write,Edit,MultiEdit,NotebookEdit,WebFetch,WebSearch,Bash,Agent,Task,mcp__synod__fmt"
     public static let editorPrompt = "In this workspace, edit Synod files only with the synod-editor tools: read_buffer before editing, apply_edits or replace_buffer to change, create_file for new files, get_diagnostics (fresh) until clean, then save_files, and only then run_summary. Use the synod tools for doc, explain, check and run_summary."
     public static let defaultModel = "claude-opus-5-5"
 
@@ -73,6 +76,7 @@ public struct ClaudeInvocation: Sendable, Equatable {
                     "--append-system-prompt", systemPrompt,
                     "--add-dir", skillFolder.path,
                     "--mcp-config", mcpConfig.path, "--strict-mcp-config",
+                    "--tools", Self.builtinTools,
                     "--allowedTools", Self.allowedTools,
                     "--disallowedTools", Self.disallowedTools]
         if let m = model?.trimmingCharacters(in: .whitespaces), !m.isEmpty { args += ["--model", m] }
