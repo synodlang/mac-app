@@ -34,7 +34,7 @@ struct PromptBar: View {
             }
             HStack(spacing: 8) {
                 Image(systemName: "sparkles").foregroundStyle(.secondary)
-                TextField(model.isReadOnly ? "The prompt bar is off on the bundled examples" : "Ask Claude to write or change Synod",
+                TextField(model.isReadOnly ? "The prompt bar is off on the bundled examples" : "Ask Claude to write or change Synod in \(model.workspace.root.lastPathComponent)",
                           text: Binding(get: { claude.draft }, set: { claude.draft = $0 }), axis: .vertical)
                     .textFieldStyle(.plain)
                     .lineLimit(1...4)

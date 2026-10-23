@@ -5,23 +5,30 @@ struct InspectorContainer: View {
     @Bindable var model: WorkspaceModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Panel", selection: $model.tab) {
-                ForEach(WorkspaceModel.InspectorTab.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(8)
-            Divider()
-            switch model.tab {
-            case .inspector:
-                if let compare = model.compare {
-                    CompareInspectorView(model: model, compare: compare)
-                } else {
-                    InspectorView(model: model)
+        // A GeometryReader has no ideal size of its own, so the (long) panels below can never ask the
+        // window for more height than it has: they scroll inside the column. Without it a long trace pushed
+        // the window's content past the window and the prompt bar out of view.
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                Picker("Panel", selection: $model.tab) {
+                    ForEach(WorkspaceModel.InspectorTab.allCases) { Text($0.rawValue).tag($0) }
                 }
-            case .problems: ProblemsView(model: model)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(8)
+                Divider()
+                switch model.tab {
+                case .inspector:
+                    if let compare = model.compare {
+                        CompareInspectorView(model: model, compare: compare)
+                    } else {
+                        InspectorView(model: model)
+                    }
+                case .problems: ProblemsView(model: model)
+                }
             }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            .clipped()
         }
     }
 }

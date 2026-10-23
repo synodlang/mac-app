@@ -43,6 +43,11 @@ ask() { # ask <question>; yes when the owner types y
   printf '%s -> %s\n' "$1" "$a" >> "$report"
   [ "$a" = y ]
 }
+stop_app() { # stop every running instance of this app (the live runs use one fresh instance each)
+  pkill -f "$exe" 2>/dev/null || true
+  for _ in $(seq 1 20); do pgrep -f "$exe" >/dev/null 2>&1 || return 0; sleep 0.25; done
+  pkill -9 -f "$exe" 2>/dev/null || true
+}
 pause() { printf '%s ' "$1"; read -r _ < /dev/tty || die "no terminal to read from"; }
 # The interactive sections record what a person typed; without a terminal they must not run (a missing
 # answer must never be recorded as "n").
@@ -59,7 +64,7 @@ need_tty() {
 command -v claude >/dev/null || die "claude (Claude Code) is not on PATH"
 command -v python3 >/dev/null || die "python3 is needed to read traces"
 work="$(mktemp -d "${TMPDIR:-/tmp}/synod-m10-live.XXXXXX")"
-cleanup() { claude mcp remove synod --scope local >/dev/null 2>&1 || true; rm -rf "$work"; }
+cleanup() { claude mcp remove synod --scope local >/dev/null 2>&1 || true; stop_app; rm -rf "$work"; }
 trap cleanup EXIT
 
 need_tty
@@ -192,8 +197,27 @@ for run in 1 2 3; do
   sumhash="$(shasum -a 256 "$m/synod.sum" 2>/dev/null | awk '{print $1}')"
   vhash="$(cd "$m" && find vendor -type f 2>/dev/null | sort | xargs shasum -a 256 2>/dev/null | shasum -a 256 | awk '{print $1}')"
   say "fresh module: $m"
-  pause "Quit any running Synod (Cmd-Q), then press Return to open the module in the app."
-  open -n "$app" --args "$m"
+  # One fresh app instance per run: stray instances of this app are stopped first, the app writes the folder
+  # of the window it opened to a file (hidden --workspace-file option), and the script checks that it is
+  # THIS module before it asks you to type anything.
+  stop_app
+  wf="$work/workspace-$run.txt"
+  rm -f "$wf"
+  mroot="$(cd "$m" && pwd -P)"
+  open -n "$app" --args --workspace-file "$wf" "$m"
+  opened=""
+  for _ in $(seq 1 60); do
+    # Both sides are made physical (pwd -P): the app reports /tmp where the system has /private/tmp.
+    if [ -s "$wf" ] && [ "$(cd "$(sed -n 2p "$wf")" 2>/dev/null && pwd -P)" = "$mroot" ]; then opened=1; break; fi
+    sleep 0.5
+  done
+  if [ -z "$opened" ]; then
+    result FAIL "the app did not open $mroot (it reports: $(sed -n 2p "$wf" 2>/dev/null || echo nothing)); not asking you to type"
+    stop_app
+    continue
+  fi
+  osascript -e "tell application \"System Events\" to set frontmost of (first process whose unix id is $(sed -n 1p "$wf")) to true" >/dev/null 2>&1 || true
+  say "The app opened $mroot (window title: acc-$run). Type only in that window."
   say "In the app: Settings > Claude: turn the prompt bar on and confirm it finds Claude Code."
   say "Then press Cmd-K, type this exactly and send it (one request, no follow-up):"
   say ""
@@ -207,6 +231,7 @@ for run in 1 2 3; do
   if ask "Was the new program saved by Claude (the buffer is not dirty and the file is on disk)?"; then result PASS "saved through save_files"; else result CHECK "unsaved: press Save All, then continue"; fi
   say "Checking the module with the bundled compiler:"
   if check_run "$m" "$before" "$sumhash" "$vhash"; then result PASS "run $run passes"; passed=$((passed + 1)); else result FAIL "run $run fails"; fi
+  stop_app
 done
 say ""
 say "passed: $passed, runs: 3"

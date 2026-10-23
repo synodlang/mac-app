@@ -161,10 +161,20 @@ struct UnsavedWindowGuard: NSViewRepresentable {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     /// AppKit reads a folder on the command line (`Synod.app --args <folder>`) as a document to
     /// open, and then SwiftUI skips its launch window, so the router never runs. Reopening the
-    /// app makes SwiftUI present the launch scene, which opens the folder (see `LaunchRouter`).
+    /// app makes SwiftUI present the launch scene, which opens the folder (see `LaunchRouter`). The reopen
+    /// event goes to THIS process by pid: `NSWorkspace.open` of the bundle would reach an already running
+    /// instance instead, so with `open -n` the new instance never got its window and another one was shown.
     func application(_ app: NSApplication, openFile f: String) -> Bool {
-        DispatchQueue.main.async { NSWorkspace.shared.open(Bundle.main.bundleURL) }
+        DispatchQueue.main.async { Self.sendReopenToSelf() }
         return true
+    }
+
+    static func sendReopenToSelf() {
+        let target = NSAppleEventDescriptor(processIdentifier: getpid())
+        let event = NSAppleEventDescriptor(eventClass: AEEventClass(kCoreEventClass), eventID: AEEventID(kAEReopenApplication),
+                                           targetDescriptor: target, returnID: AEReturnID(kAutoGenerateReturnID),
+                                           transactionID: AETransactionID(kAnyTransactionID))
+        AESendMessage(event.aeDesc, nil, AESendMode(kAENoReply), kAEDefaultTimeout)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

@@ -23,7 +23,9 @@ struct WorkspaceWindow: View {
             env.probeIfNeeded()
             env.probeClaudeIfNeeded()
             do {
-                model = WorkspaceModel(workspace: try Workspace.open(url), env: env)
+                let ws = try Workspace.open(url)
+                model = WorkspaceModel(workspace: ws, env: env)
+                LaunchArguments.recordWorkspace(ws.root)
             } catch {
                 self.error = error.localizedDescription
             }

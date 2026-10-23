@@ -197,6 +197,23 @@ enum LaunchArguments {
     /// Set once the launch folder has been opened, so it is not opened again.
     @MainActor static var routed = false
 
+    /// Hidden dev aid (the live acceptance script): `--workspace-file <path>` makes the app write the folder of
+    /// the workspace window it opens (and its pid) to that file, so a script can check what is on screen.
+    static let workspaceFileOption = "--workspace-file"
+
+    static var workspaceFile: URL? {
+        let args = Array(CommandLine.arguments.dropFirst())
+        guard let i = args.firstIndex(of: workspaceFileOption), i + 1 < args.count else { return nil }
+        return URL(fileURLWithPath: args[i + 1])
+    }
+
+    /// Records the opened workspace for `--workspace-file`.
+    static func recordWorkspace(_ root: URL) {
+        guard let file = workspaceFile else { return }
+        let text = "\(getpid())\n\(root.resolvingSymlinksInPath().path)\n"
+        try? text.write(to: file, atomically: true, encoding: .utf8)
+    }
+
     static var workspaceURL: URL? { workspaceURL(in: Array(CommandLine.arguments.dropFirst())) }
 
     /// The first argument that is not an option (or macOS's `-NS...` defaults pairs) and names an existing path.
@@ -204,7 +221,7 @@ enum LaunchArguments {
         var skipNext = false
         for a in args {
             if skipNext { skipNext = false; continue }
-            if a.hasPrefix("-") { skipNext = a.hasPrefix("-NS") || a.hasPrefix("-Apple"); continue }
+            if a.hasPrefix("-") { skipNext = a.hasPrefix("-NS") || a.hasPrefix("-Apple") || a == workspaceFileOption; continue }
             let path = (a as NSString).expandingTildeInPath
             if let isDir = exists(path) { return URL(fileURLWithPath: path, isDirectory: isDir) }
         }

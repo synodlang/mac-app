@@ -484,12 +484,15 @@ struct EditorPane: View {
                 EditorBanners(model: model, doc: doc)
                 Divider()
                 EditorTextView(model: editor, document: doc, locked: editor.userLocked)
+                    // Scrolls inside the pane: its own height never decides the window's content height.
+                    .frame(minHeight: 40, maxHeight: .infinity)
                     .id(doc.id)
             } else {
                 ContentUnavailableView("No file", systemImage: "doc.text", description: Text("Select a program, a package or a problem."))
             }
         }
         .background(Color(nsColor: EditorPalette.paper.color))
+        .clipped()
     }
 }
 

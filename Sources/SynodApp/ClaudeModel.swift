@@ -77,6 +77,12 @@ final class ClaudeModel {
         guard isEnabled() else { return .refused("The prompt bar is off. Turn it on in Settings > Claude.") }
         guard let host else { return .refused("No workspace.") }
         guard !host.isReadOnly else { return .refused("The prompt bar is off on the bundled examples. Copy them to a folder first.") }
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: host.workspace.root.path, isDirectory: &isDir), isDir.boolValue else {
+            let why = "The folder \(host.workspace.root.lastPathComponent) no longer exists. Open the module again."
+            errorText = why
+            return .refused(why)
+        }
         guard let cfg = config() else {
             let why = host.env.promptBarProblem ?? "The prompt bar is not set up."
             errorText = why

@@ -80,6 +80,18 @@ private func makeFake(_ script: [String: Any], in dir: URL) throws -> (wrapper: 
         }
     }
 
+    @Test func aVanishedModuleFolderIsRefusedWithItsName() async throws {
+        let (model, root) = try makeModel(["main/main.synod": "# package main\ndefine main\n"])
+        defer { model.stop() }
+        model.claude.isEnabled = { true }
+        model.claude.config = { Issue.record("config asked for"); return nil }
+        try FileManager.default.removeItem(at: root)
+        let r = await model.claude.send("hello")
+        guard case .refused(let why) = r else { Issue.record("send gave \(r)"); return }
+        #expect(why.contains(root.lastPathComponent) && why.contains("no longer exists"))
+        #expect(model.claude.errorText == why && !model.claude.isRunning)
+    }
+
     @Test func unsavedBuffersMustBeSavedFirst() async throws {
         let (model, root) = try makeModel(["main/main.synod": "# package main\ndefine main\n"])
         defer { model.stop(); try? FileManager.default.removeItem(at: root) }
