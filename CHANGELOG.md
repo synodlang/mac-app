@@ -4,7 +4,7 @@ All notable changes to the Synod Mac app. Every `synodlang` repository shares MA
 
 ## Unreleased
 
-## v0.2.2 — 2026-10-22
+## v0.2.2 — 2026-10-23
 
 Implements Synod 0.2.
 
@@ -18,7 +18,10 @@ Implements Synod 0.2.
 
 ### Changed
 
-- Bundled `synod` v0.2.6 and agent-skills v0.2.1; player v0.2.1 and examples v0.2.1 are unchanged. All pinned and verified in `deps.env`.
+- Bundled `synod` v0.2.6 and agent-skills v0.2.2; player v0.2.1 and examples v0.2.1 are unchanged. All pinned and verified in `deps.env`.
+- The prompt bar's built-in tools are restricted to Read, Glob and Grep (`--tools`): no shell and no subagent, so `synod get` is the user's step.
+- The inspector's trace list scrolls, so the prompt bar stays visible when a trace is long.
+- `scripts/acceptance-m10-live.sh` refuses to run without a terminal.
 - Release builds must pass the M8, M9 and M10 acceptance runs first.
 
 ## v0.2.1 — 2026-10-22

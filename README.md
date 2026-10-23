@@ -7,7 +7,7 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.2.2.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.6), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.1), so it works offline.
+**v0.2.2.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.6), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.2), so it works offline.
 
 What works:
 
@@ -82,7 +82,7 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 | [examples](https://github.com/synodlang/examples) | Sample programs and acceptance tests | Available |
 | [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.1 released |
 | **mac-app** (this repository) | The Mac app | v0.2.2 (M10) |
-| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.1 released |
+| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.2 released |
 | [synodlang.github.io](https://github.com/synodlang/synodlang.github.io) | The website and documentation | Install page live; rest planned (M11) |
 | [homebrew-tap](https://github.com/synodlang/homebrew-tap) | Homebrew formula for `synod` | Updated by compiler releases |
 | [scoop-bucket](https://github.com/synodlang/scoop-bucket) | Scoop manifest for `synod` | Updated by compiler releases |
@@ -127,7 +127,7 @@ The app has a prompt bar (⌘K), for example "animate Raft with 5 nodes and a le
 - **Logs never hold text.** The app logs a tool name, a path and byte counts, never the contents of your files or prompts.
 - **Revert.** Before each request the app snapshots your workspace. Claude edits your open buffers as "Claude Edit" undo steps, a banner lists what changed, and Revert restores every file byte for byte and removes added files.
 
-Claude gets the `synod` skill from [agent-skills](https://github.com/synodlang/agent-skills) and a short list of allowed tools: `Read`, `Glob` and `Grep`, the editor tools (`mcp__synod-editor__*`), the `synod mcp` tools `doc`, `explain`, `check` and `run_summary`, and `synod get`. It has no `Write` or `Edit` tool. It reuses existing packages first, verifies with `synod check`, runs the program and stops. The app streams progress into the prompt bar and plays the result.
+Claude gets the `synod` skill from [agent-skills](https://github.com/synodlang/agent-skills) and a short list of allowed tools: `Read`, `Glob` and `Grep`, the editor tools (`mcp__synod-editor__*`), the `synod mcp` tools `doc`, `explain`, `check` and `run_summary`. Its built-in tools are restricted to those three (`--tools Read,Glob,Grep`): no shell, no subagent, no `Write` or `Edit`, and `synod get` is your step. It reuses existing packages first, verifies with `synod check`, runs the program and stops. The app streams progress into the prompt bar and plays the result.
 
 "Explain this run" sends `synod run --summary` and asks for `lesson.Note` lines, so captions come from the simulator and cannot invent behaviour. The result is plain Synod source that you own. The language never depends on Claude: you can write, check, run and animate Synod without it.
 
