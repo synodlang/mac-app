@@ -24,6 +24,13 @@ Implements Synod 0.2.
 - `scripts/acceptance-m10-live.sh` refuses to run without a terminal.
 - Release builds must pass the M8, M9 and M10 acceptance runs first.
 
+### Fixed
+
+- Opening a folder (`open -n Synod.app --args <folder>`) opens that folder in its own instance and never restores an old window, so the prompt bar always works in the workspace you opened.
+- The prompt bar stays in view when the inspector's trace list is long.
+- A finished request keeps the editor locked until its changes are shown and the new program is selected.
+
+
 ## v0.2.1 — 2026-10-22
 
 Implements Synod 0.2.
