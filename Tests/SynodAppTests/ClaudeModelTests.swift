@@ -127,7 +127,6 @@ private func makeFake(_ script: [String: Any], in dir: URL) throws -> (wrapper: 
         #expect(await model.claude.send("do it") == .started)
         #expect(model.editor.userLocked)
         #expect(await model.claude.waitUntilIdle(timeout: 60))
-        // isRunning turns false before the request's changes are worked out, so wait for them (bounded).
         let settled = await poll(timeout: 30) { model.claude.hasBanner && !model.editor.userLocked && model.claude.finalText != nil }
         #expect(settled)
         #expect(!model.editor.userLocked)

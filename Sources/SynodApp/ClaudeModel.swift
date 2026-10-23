@@ -202,8 +202,6 @@ final class ClaudeModel {
 
     private func finish(exit: ClaudeProcess.Exit?, launchError: String?) async {
         process = nil
-        isRunning = false
-        host?.editor.userLocked = false
         lastExitStatus = exit?.status
         if let launchError {
             errorText = "Could not start claude: \(launchError)"
@@ -223,6 +221,9 @@ final class ClaudeModel {
         }
         if finalText == nil, errorText == nil { finalText = assistantText }
         await refreshChanges()
+        // Idle only once the request's changes are shown, so a caller that waits for idle sees them.
+        isRunning = false
+        host?.editor.userLocked = false
     }
 
     // MARK: Changes
