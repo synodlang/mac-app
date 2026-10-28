@@ -18,9 +18,13 @@ struct WelcomeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             HStack(spacing: 10) {
+                Button("New Workspace…") {
+                    Task { if let url = await NewWorkspaceFlow.run(env: env) { open(url) } }
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .buttonStyle(.borderedProminent)
                 Button("Open Workspace…") { if let url = chooseWorkspace() { open(url) } }
                     .keyboardShortcut("o")
-                    .buttonStyle(.borderedProminent)
                 Button("Open Examples") {
                     if let url = env.examplesURL { open(url) }
                 }

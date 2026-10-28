@@ -12,6 +12,7 @@ enum HeadlessCommands {
         if args.contains("--completion-check") { return await HeadlessCompletion.run(args) }
         if args.contains("--claude-live") { return await HeadlessClaudeLive.run(args) }
         if args.contains("--claude-check") { return await HeadlessClaude.run(args) }
+        if args.contains("--new-workspace-check") { return await HeadlessNewWorkspace.run(args) }
         if args.contains("--mcp-check") { return await HeadlessMCP.run(args) }
         if args.contains("--predict-check") { return await HeadlessLearning.predictCheck(args) }
         if args.contains("--hit-check") { return await HeadlessLearning.hitCheck(args) }

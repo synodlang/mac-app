@@ -153,6 +153,14 @@ final class WorkspaceModel {
         } else if let first = examplesScan?.programs.first, scan.packages.isEmpty {
             select(Item(origin: .examples, kind: .program, relPath: first.relPath))
         }
+        // A workspace just made by New Workspace opens on its demo program, or on the package of a library.
+        if let made = env.takeNewWorkspace(at: workspace.root) {
+            if let program = made.program {
+                select(Item(origin: .own, kind: .program, relPath: program))
+            } else if let package = made.package {
+                select(Item(origin: .own, kind: .package, relPath: package))
+            }
+        }
     }
 
     static func isInside(_ child: URL, _ parent: URL) -> Bool {

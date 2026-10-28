@@ -7,7 +7,7 @@ import AppKit
 enum Entry {
     static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export", "--stage-check", "--editor-check",
                                           "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check", "--m9", "--m10",
-                                          "--completion-check", "--claude-check", "--mcp-check", "--claude-live"]
+                                          "--completion-check", "--claude-check", "--mcp-check", "--claude-live", "--new-workspace-check"]
 
     static let helpText = """
     Synod: the Mac app for the Synod language.
@@ -49,6 +49,8 @@ enum Entry {
             the whole M9 acceptance (editor, Predict, hit, Break it, Compare, GIF) plus the M8 video; writes report-m9.json
       Synod --m10 <module> --out <dir> [--quick] [--claude <fake-claude>] [--golden tools.json] [--bridge <synod-editor-mcp>]
             the M10 acceptance (completion, prompt bar with a fake claude, editor MCP server) plus --m9; writes report-m10.json
+      Synod --new-workspace-check [--report f]
+            File > New Workspace on a temporary folder: synod.mod, the package folder and demo, synod check, a library, an existing folder
       Synod --help
     """
 

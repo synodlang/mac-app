@@ -39,7 +39,7 @@ public final class FileWatcher: @unchecked Sendable {
     }
 
     /// The path with all symlinks resolved (`/var` becomes `/private/var`, as FSEvents reports).
-    static func realPath(_ path: String) -> String {
+    public static func realPath(_ path: String) -> String {
         guard let p = realpath(path, nil) else { return URL(fileURLWithPath: path).standardizedFileURL.path }
         defer { free(p) }
         return String(cString: p)

@@ -29,6 +29,10 @@ struct AppCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
+            Button("New Workspace…") {
+                Task { if let url = await NewWorkspaceFlow.run(env: env) { openWindow(value: url) } }
+            }
+            .keyboardShortcut("n", modifiers: [.command, .shift])
             Button("Open Workspace…") {
                 if let url = chooseWorkspace() { openWindow(value: url) }
             }

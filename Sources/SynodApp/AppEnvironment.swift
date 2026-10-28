@@ -175,6 +175,19 @@ final class AppEnvironment {
         return nil
     }
 
+    // MARK: New workspaces
+
+    /// Workspaces made by New Workspace, waiting for their window to open them on the right file.
+    private var newWorkspaces: [String: NewWorkspace.Created] = [:]
+
+    func expectNewWorkspace(_ made: NewWorkspace.Created) {
+        newWorkspaces[FileWatcher.realPath(made.root.path)] = made
+    }
+
+    func takeNewWorkspace(at root: URL) -> NewWorkspace.Created? {
+        newWorkspaces.removeValue(forKey: FileWatcher.realPath(root.path))
+    }
+
     func addRecent(_ url: URL) {
         let p = url.standardizedFileURL.path
         recents.removeAll { $0 == p }
