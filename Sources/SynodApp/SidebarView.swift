@@ -34,6 +34,18 @@ struct SidebarView: View {
                     }
                 }
             }
+            if let lk = model.looksScan {
+                Section("Looks") {
+                    ForEach(lk.programs) { p in
+                        Label(p.relPath, systemImage: "lock")
+                            .tag(WorkspaceModel.Item(origin: .looks, kind: .program, relPath: p.relPath))
+                    }
+                    ForEach(lk.packages) { p in
+                        Label(p.relPath, systemImage: "paintpalette")
+                            .tag(WorkspaceModel.Item(origin: .looks, kind: .package, relPath: p.relPath))
+                    }
+                }
+            }
         }
         .safeAreaInset(edge: .bottom) {
             Button("Copy Examples to Folder…") { model.copyExamples() }

@@ -86,3 +86,18 @@ let goldenPicks = ["#151a2e", "#e86f5a", "#202538", "#777a83", "#dedad5", "#d96a
         #expect(q.index(r: 240, g: 240, b: 240) == 1)
     }
 }
+
+@Test func darkenedPaletteHoldsPaperAtHalfAndQuarterLightness() {
+    let plain = GIFPalette(theme: brandTheme)
+    let dark = GIFPalette(theme: brandTheme, darkened: true)
+    #expect(dark.colors.count <= 256)
+    #expect(dark.colors.prefix(brandTheme.count) == plain.colors.prefix(brandTheme.count))
+    let extra = Array(dark.colors[brandTheme.count..<(brandTheme.count + 2)])
+    #expect(extra[0] != extra[1])
+    #expect(extra[0].r < brandTheme[0].color.r || extra[0].b < brandTheme[0].color.b || extra[0].g <= brandTheme[0].color.g)
+    #expect(GIFPalette.isDarkened("{\"format\":\"synod-scene/1\",\"theme\":{\"Paper\":\"#151A2E\"},\"style\":{\"vignette\":0.55},\"shapes\":[\n"))
+    #expect(GIFPalette.isDarkened("{\"style\":{\"stroke\":2,\"shadow\":0.4},\"shapes\":[\n"))
+    #expect(!GIFPalette.isDarkened("{\"style\":{\"vignette\":0,\"glow\":3},\"shapes\":[\n"))
+    #expect(!GIFPalette.isDarkened("{\"theme\":{},\"shapes\":[\n"))
+    #expect(GIFPalette(sceneText: "{\"theme\":{\"Paper\":\"#151A2E\",\"Ink\":\"#EDE9E1\"},\"style\":{\"shadow\":0.3},\"shapes\":[\n").colors.count > 2)
+}

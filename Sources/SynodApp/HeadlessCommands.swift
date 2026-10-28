@@ -23,6 +23,7 @@ enum HeadlessCommands {
         if args.contains("--m9") { return await AcceptanceM9.run(args) }
         if args.contains("--m10") { return await AcceptanceM10.run(args) }
         if args.contains("--acceptance") { return await acceptance(args) }
+        if args.contains("--scene-acceptance") { return await Acceptance.runScenes(args) }
         return 2
     }
 

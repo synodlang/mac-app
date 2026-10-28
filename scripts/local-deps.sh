@@ -2,16 +2,19 @@
 # Builds the sibling checkouts into .deps/ for local development, before their releases exist:
 #   ../compiler  -> .deps/synod/synod            (go build ./cmd/synod, the host architecture)
 #   ../player    -> .deps/player/synod-player.iife.js  (esbuild into .deps; player/dist is not touched)
+#   ../player/dist/synod-player-fonts.tar.gz -> .deps/fonts  (the four fonts; `npm run build` in ../player makes it)
+#   ../looks     -> .deps/looks                   (a copy without .git; vendor/ kept, else filled from ../examples)
 #   ../examples  -> .deps/examples               (a copy without .git)
 #   ../agent-skills -> .deps/agent-skills         (a copy without .git, when the checkout exists)
 # and writes .deps/.local. fetch-deps.sh refuses to run over that marker unless given --force.
-#   scripts/local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--agent-skills <dir>] [--skip-player]
+#   scripts/local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--looks <dir>] [--agent-skills <dir>] [--skip-player]
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compiler="$root/../compiler"
 player="$root/../player"
 examples="$root/../examples"
+looks="$root/../looks"
 skills="$root/../agent-skills"
 skip_player=0
 while [[ $# -gt 0 ]]; do
@@ -19,9 +22,10 @@ while [[ $# -gt 0 ]]; do
     --compiler) compiler="$2"; shift 2 ;;
     --player) player="$2"; shift 2 ;;
     --examples) examples="$2"; shift 2 ;;
+    --looks) looks="$2"; shift 2 ;;
     --agent-skills) skills="$2"; shift 2 ;;
     --skip-player) skip_player=1; shift ;;
-    *) echo "usage: local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--agent-skills <dir>] [--skip-player]" >&2; exit 2 ;;
+    *) echo "usage: local-deps.sh [--compiler <dir>] [--player <dir>] [--examples <dir>] [--looks <dir>] [--agent-skills <dir>] [--skip-player]" >&2; exit 2 ;;
   esac
 done
 
@@ -52,6 +56,29 @@ rm -rf "$deps/examples"
 mkdir -p "$deps/examples"
 (cd "$examples" && tar --exclude=.git -cf - .) | (cd "$deps/examples" && tar -xf -)
 echo "local-deps: examples copied from $examples"
+
+# fonts: the player's release asset, unpacked
+fonts_tar="$player/dist/synod-player-fonts.tar.gz"
+if [[ $skip_player -eq 0 ]]; then
+  [[ -f "$fonts_tar" ]] || die "no $fonts_tar; run npm run build in $player"
+  rm -rf "$deps/fonts" "$deps/fonts.tmp"
+  mkdir -p "$deps/fonts.tmp"
+  tar -xzf "$fonts_tar" -C "$deps/fonts.tmp"
+  mv "$deps/fonts.tmp/fonts" "$deps/fonts"
+  rm -rf "$deps/fonts.tmp"
+  echo "local-deps: fonts unpacked from $fonts_tar"
+fi
+
+# looks
+if [[ -f "$looks/synod.mod" ]]; then
+  rm -rf "$deps/looks"
+  mkdir -p "$deps/looks"
+  (cd "$looks" && tar --exclude=.git --exclude=out -cf - .) | (cd "$deps/looks" && tar -xf -)
+  "$root/scripts/vendor-looks.sh" "$deps/looks" "$deps/examples"
+  echo "local-deps: looks copied from $looks"
+else
+  echo "local-deps: no looks at $looks; skipped" >&2
+fi
 
 # agent-skills
 if [[ -f "$skills/skills/synod/SKILL.md" ]]; then

@@ -88,17 +88,26 @@ public struct GIFPalette: Sendable, Equatable {
         self.colors = colors
     }
 
-    /// Builds the palette from the theme entries in file order.
-    public init(theme: [(name: String, color: GIFColor)]) {
+    /// Builds the palette from the theme entries in file order. With `darkened` (the scene `style.vignette` or
+    /// `style.shadow` is above 0) it also holds Paper at 0.5 and 0.25 of its OKLab lightness (decision 88, G55).
+    public init(theme: [(name: String, color: GIFColor)], darkened: Bool = false) {
         let paper = theme.first { $0.name == "Paper" }?.color ?? Self.defaultPaper
         let ink = theme.first { $0.name == "Ink" }?.color
         let others = theme.filter { $0.name != "Paper" }
         var base = [paper] + others.map(\.color)
-        if base.count > Self.capacity { base = Array(base[0..<Self.capacity]) }
+        let limit = Self.capacity - (darkened ? 2 : 0)
+        if base.count > limit { base = Array(base[0..<limit]) }
         let n = base.count
         var out = base
+        if darkened {
+            for f in [0.5, 0.25] {
+                var lab = OKLab.lab(paper)
+                lab.x *= f
+                out.append(OKLab.color(lab))
+            }
+        }
         if n >= 2 {
-            let s = min(15, (Self.capacity - n) / (n - 1))
+            let s = min(15, (Self.capacity - out.count) / (n - 1))
             if s > 0 {
                 for c in base.dropFirst() {
                     for j in 1...s { out.append(OKLab.mix(paper, c, Double(j) / Double(s + 1))) }
@@ -119,7 +128,22 @@ public struct GIFPalette: Sendable, Equatable {
 
     /// The palette of a scene.json text (its `theme`).
     public init(sceneText: String) {
-        self.init(theme: Self.theme(inSceneText: sceneText))
+        self.init(theme: Self.theme(inSceneText: sceneText), darkened: Self.isDarkened(sceneText))
+    }
+
+    /// True when the scene `style` (line 1) has `vignette` or `shadow` above 0.
+    public static func isDarkened(_ text: String) -> Bool {
+        let head = String(decoding: text.utf8.prefix(while: { $0 != 10 }), as: UTF8.self)
+        guard let r = head.range(of: "\"style\"") else { return false }
+        let rest = head[r.upperBound...]
+        guard let open = rest.firstIndex(of: "{"), let close = rest[open...].firstIndex(of: "}") else { return false }
+        let body = rest[open..<close]
+        for key in ["\"vignette\":", "\"shadow\":"] {
+            guard let k = body.range(of: key) else { continue }
+            let num = body[k.upperBound...].prefix { "0123456789.-eE+".contains($0) }
+            if let v = Double(num), v > 0 { return true }
+        }
+        return false
     }
 
     /// The theme entries in file order, read from the scene's first line (`"theme":{...}`).

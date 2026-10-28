@@ -21,7 +21,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-for f in .deps/synod/synod .deps/player/synod-player.iife.js .deps/examples .deps/agent-skills/skills/synod/SKILL.md; do
+for f in .deps/synod/synod .deps/player/synod-player.iife.js .deps/fonts/Inter.woff2 .deps/looks/synod.mod .deps/examples .deps/agent-skills/skills/synod/SKILL.md; do
   [ -e "$f" ] || { echo "bundle: missing $f; run scripts/fetch-deps.sh" >&2; exit 1; }
 done
 
@@ -62,6 +62,11 @@ cp Support/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 cp -R .deps/examples "$app/Contents/Resources/examples"
 rm -rf "$app/Contents/Resources/examples/.commit" "$app/Contents/Resources/examples/.github" "$app/Contents/Resources/examples/.gitignore"
 
+mkdir -p "$app/Contents/Resources/fonts"
+cp -R .deps/fonts/. "$app/Contents/Resources/fonts/"
+cp -R .deps/looks "$app/Contents/Resources/looks"
+rm -rf "$app/Contents/Resources/looks/.commit" "$app/Contents/Resources/looks/.github" "$app/Contents/Resources/looks/.gitignore" "$app/Contents/Resources/looks/out"
+
 cp -R .deps/agent-skills "$app/Contents/Resources/agent-skills"
 rm -rf "$app/Contents/Resources/agent-skills/.git" "$app/Contents/Resources/agent-skills/.github" "$app/Contents/Resources/agent-skills/.version" \
   "$app/Contents/Resources/agent-skills/tools" "$app/Contents/Resources/agent-skills/go.mod"
@@ -70,7 +75,8 @@ rm -rf "$app/Contents/Resources/agent-skills/.git" "$app/Contents/Resources/agen
 cat > "$app/Contents/Resources/NOTICE-versions.txt" <<NOTICE
 Synod $version
 synod (compiler) $SYNOD_VERSION
-player $PLAYER_VERSION
+player $PLAYER_VERSION (with fonts: Inter, JetBrains Mono, Source Serif 4, Shantell Sans, SIL OFL 1.1; texts in fonts/)
+looks $LOOKS_VERSION ($LOOKS_COMMIT)
 examples $EXAMPLES_VERSION ($EXAMPLES_COMMIT)
 agent-skills $AGENT_SKILLS_VERSION
 NOTICE

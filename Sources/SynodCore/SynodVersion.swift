@@ -1,13 +1,13 @@
 import Foundation
 
-/// The output of `synod version`: `language 0.2`, `compiler v0.2.4 (...)`, `formats a b c`.
+/// The output of `synod version`: `language 0.3`, `compiler v0.2.4 (...)`, `formats a b c`.
 public struct SynodVersion: Sendable, Equatable {
     public let language: String
     public let compiler: String
     public let formats: [String]
 
     /// The language version this app implements.
-    public static let requiredLanguage = "0.2"
+    public static let requiredLanguage = "0.3"
     /// The formats this app reads.
     public static let requiredFormats = ["synod-trace/1", "synod-scene/1", "synod-check/1"]
 
@@ -39,7 +39,7 @@ public struct SynodVersion: Sendable, Equatable {
         return SynodVersion(language: language, compiler: compiler, formats: formats)
     }
 
-    /// Why this compiler cannot be used, or nil when it speaks language 0.2 and the three formats.
+    /// Why this compiler cannot be used, or nil when it speaks language 0.3 and the three formats.
     public var problem: String? {
         if language != Self.requiredLanguage {
             return "This app needs Synod language \(Self.requiredLanguage), but the compiler reports \(language.isEmpty ? "no language version" : language)."

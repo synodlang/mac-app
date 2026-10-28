@@ -15,9 +15,10 @@
     async init(sceneText, width, height, pixelRatio) {
       canvas = document.createElement("canvas");
       player = SynodPlayer.createPlayer(canvas, sceneText, {
-        autoplay: false, autoResize: false, pixelRatio: pixelRatio,
+        autoplay: false, autoResize: false, pixelRatio: pixelRatio, fontBase: window.synodFontBase,
       });
       player.resize(width, height, pixelRatio);
+      await player.fontsReady();
       await document.fonts.ready;
       return { duration: player.duration, warnings: Array.from(player.warnings), width: canvas.width, height: canvas.height };
     },

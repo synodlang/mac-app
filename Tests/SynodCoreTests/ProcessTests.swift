@@ -178,7 +178,7 @@ func scanRealExamples() throws {
 @Test func probeReadsTheVersion() async throws {
     let v = try await SynodVersion.probe(fakeRunner("ok"))
     #expect(v.isCompatible)
-    #expect(v.language == "0.2")
+    #expect(v.language == "0.3")
 }
 
 // MARK: RunPipeline

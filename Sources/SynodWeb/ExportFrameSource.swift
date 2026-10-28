@@ -27,7 +27,7 @@ private final class LoadDelegate: NSObject, WKNavigationDelegate {
 @MainActor
 public final class ExportFrameSource {
     private let webView: WKWebView
-    private let html: String
+    private let assets: WebAssets
     private let delegate = LoadDelegate()
     private var window: NSWindow?
     private let sceneText: String
@@ -53,9 +53,10 @@ public final class ExportFrameSource {
         self.pixelRatio = pixelRatio
         let config = WKWebViewConfiguration()
         let ucc = config.userContentController
+        ucc.addUserScript(WKUserScript(source: assets.fontPrelude(), injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page))
         ucc.addUserScript(WKUserScript(source: try assets.playerScript(), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .page))
         ucc.addUserScript(WKUserScript(source: try assets.exportJS(), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .page))
-        html = try assets.exportHTML()
+        self.assets = assets
         let frame = CGRect(x: 0, y: 0, width: 400, height: 300)
         webView = WKWebView(frame: frame, configuration: config)
         webView.navigationDelegate = delegate
@@ -88,7 +89,7 @@ public final class ExportFrameSource {
     public func prepare() async throws -> ExportSceneInfo {
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
             delegate.continuation = c
-            webView.loadHTMLString(html, baseURL: nil)
+            assets.load("export.html", in: webView)
         }
         let r = try await call(
             "return await window.exporter.init(text, w, h, pr);",

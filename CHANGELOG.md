@@ -4,6 +4,21 @@ All notable changes to the Synod Mac app. Every `synodlang` repository shares MA
 
 ## Unreleased
 
+Prepared for v0.3.0 (Implements Synod 0.3); not tagged. The `deps.env` values marked TODO are filled by the release step.
+
+### Added
+
+- Looks: the bundled `looks` module (doodle, lumen, chalk, sketch, terminal and the solarized themes, with `vendor/` prefilled so the demos run offline) shows in the sidebar under "Looks", read-only like the examples. No theme picker yet (planned for M13): the stage shows the theme the program imports.
+- Fonts: the player's fonts asset (Inter, JetBrains Mono, Source Serif 4, Shantell Sans, SIL OFL 1.1, with the licence texts) is bundled in `Contents/Resources/fonts/` and every player (stage, Compare, export) is mounted with `fontBase` on it. Video and GIF exports wait for `player.fontsReady()` before the first frame.
+- GIF palette: when the scene `style.vignette` or `style.shadow` is above 0 the palette also holds Paper at 0.5 and 0.25 of its OKLab lightness.
+- Click-to-select uses the player's `hitTest`, which follows camera and drift in 0.3 scenes.
+- `scripts/local-deps.sh` and `SYNOD_DEPS_LOCAL=1 scripts/fetch-deps.sh` build `.deps/` from the sibling checkouts (compiler, player with its fonts tarball, looks, examples, agent-skills) before the releases exist; `scripts/vendor-looks.sh` prefills the looks `vendor/`.
+- `--scene-acceptance` and `scripts/acceptance-scenes.sh`: the PSNR export acceptance for the player's handmade 0.3 scenes (vignette, shadow, glow, sketch, effects, camera, drift, trail, icons, counters, roles).
+
+### Changed
+
+- The app requires the `synod` compiler to report language 0.3.
+
 ## v0.2.3 — 2026-10-28
 
 Implements Synod 0.2.

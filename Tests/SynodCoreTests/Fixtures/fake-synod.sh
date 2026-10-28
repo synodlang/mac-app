@@ -41,7 +41,7 @@ esac
 
 case "$cmd" in
   version)
-    printf 'language 0.2\ncompiler v0.2.4 (fake, 2026-10-22)\nformats synod-check/1 synod-trace/1 synod-scene/1\n'
+    printf 'language 0.3\ncompiler v0.2.4 (fake, 2026-10-22)\nformats synod-check/1 synod-trace/1 synod-scene/1\n'
     exit 0 ;;
   check)
     if [ "$mode" = "diag" ]; then

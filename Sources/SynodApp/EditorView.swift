@@ -545,7 +545,7 @@ struct EditorBanners: View {
                     Text(doc.file.hasPrefix("vendor/") ? "Vendored code is read-only." : "Bundled examples are read-only.")
                         .font(.callout)
                     Spacer()
-                    if doc.origin == .examples || model.isReadOnly {
+                    if doc.origin != .own || model.isReadOnly {
                         Button("Copy Examples to Folder…") { model.copyExamples() }
                     }
                 }

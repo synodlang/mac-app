@@ -5,7 +5,7 @@ import AppKit
 /// NSApplication without a window server presence; everything else starts the SwiftUI app.
 @main
 enum Entry {
-    static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--export", "--stage-check", "--editor-check",
+    static let headlessFlags: Set<String> = ["--smoke", "--acceptance", "--scene-acceptance", "--export", "--stage-check", "--editor-check",
                                           "--predict-check", "--hit-check", "--breakit-check", "--compare-check", "--gif-check", "--m9", "--m10",
                                           "--completion-check", "--claude-check", "--mcp-check", "--claude-live", "--new-workspace-check"]
 
@@ -23,6 +23,8 @@ enum Entry {
             [--seed N] [--mode ordered|proportional]       (a .gif extension makes a GIF)
       Synod --acceptance <module> --out <dir> [--program raft] [--quick]
             smoke test, then export a program at 1080p60 and compare frames with the stage
+      Synod --scene-acceptance <scene.json>... --out <dir> [--quick]
+            the same export acceptance for handmade scene files
       Synod --stage-check <module> [--program raft] [--report f]
             the stage draws a loaded scene while paused and Predict stops at the pause marker
       Synod --editor-check <module> [--report f]

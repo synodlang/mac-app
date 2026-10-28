@@ -7,11 +7,11 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.2.3.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.7), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.3), so it works offline.
+**v0.3.0 (prepared, not tagged).** The Mac app implements Synod 0.3: it draws the 0.3 skins (fonts, glow, shadow, vignette, sketch, camera, drift), bundles the fonts and the `looks` module, and requires a compiler that reports language 0.3. Earlier text: v0.2.3 implemented Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.7), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.3), so it works offline.
 
 What works:
 
-- Open a workspace (a folder with `synod.mod`), with a sidebar of programs, packages and the bundled examples.
+- Open a workspace (a folder with `synod.mod`), with a sidebar of programs, packages, the bundled examples and the bundled looks demos.
 - Run a program (⌘R, or on every change after a 300 ms debounce) in ordered or proportional mode, with an optional seed. Outputs go to the cache, never into your workspace.
 - Play the scene on the stage, with play and pause, previous and next fact, scrubbing, speeds from 0.25x to 4x, markers for questions, captions and broken invariants, and a red banner when an invariant breaks or the run fails. A scene shows its first frame as soon as it loads.
 - Edit source in the app: syntax highlighting from `synod check --tokens`, live diagnostics with underlines and quick fixes, format on save (⌘S), and go to definition.
@@ -51,7 +51,8 @@ A Homebrew cask and Developer ID notarization may follow.
 You need macOS 15 or later and Xcode 27 (Swift 6.2 tools or newer). There is no Xcode project; the app is a Swift package.
 
 ```sh
-scripts/fetch-deps.sh   # downloads and verifies the pinned synod, player, examples and agent-skills into .deps/
+scripts/fetch-deps.sh   # downloads and verifies the pinned synod, player, fonts, looks, examples and agent-skills into .deps/
+SYNOD_DEPS_LOCAL=1 scripts/fetch-deps.sh   # before the releases exist: builds .deps/ from the sibling checkouts (scripts/local-deps.sh)
 swift build
 swift test
 scripts/bundle.sh       # builds build/Synod.app (universal, ad-hoc signed)

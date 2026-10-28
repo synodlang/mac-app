@@ -52,6 +52,7 @@ final class EditorModel {
 
     let workspace: Workspace
     let examples: Workspace?
+    let looks: Workspace?
     /// True when the workspace itself is inside the bundled examples.
     let ownReadOnly: Bool
 
@@ -96,10 +97,11 @@ final class EditorModel {
     @ObservationIgnored private var saving: Set<String> = []
     @ObservationIgnored private weak var highlighted: EditorDocument?
 
-    init(workspace: Workspace, examples: Workspace? = nil, ownReadOnly: Bool = false,
+    init(workspace: Workspace, examples: Workspace? = nil, looks: Workspace? = nil, ownReadOnly: Bool = false,
          runner: @escaping () -> SynodRunner?) {
         self.workspace = workspace
         self.examples = examples
+        self.looks = looks
         self.ownReadOnly = ownReadOnly
         self.runner = runner
     }
@@ -109,7 +111,9 @@ final class EditorModel {
         generation += 1
     }
 
-    func workspace(for origin: Origin) -> Workspace? { origin == .own ? workspace : examples }
+    func workspace(for origin: Origin) -> Workspace? {
+        switch origin { case .own: workspace; case .examples: examples; case .looks: looks }
+    }
 
     static func key(_ file: String, _ origin: Origin) -> String { "\(origin.rawValue):\(file)" }
 
@@ -122,7 +126,7 @@ final class EditorModel {
 
     /// Whether a file is read-only: the bundled examples, a workspace inside them, vendored code.
     func isReadOnly(file: String, origin: Origin) -> Bool {
-        origin == .examples || ownReadOnly || file.hasPrefix("vendor/")
+        origin != .own || ownReadOnly || file.hasPrefix("vendor/")
     }
 
     @discardableResult

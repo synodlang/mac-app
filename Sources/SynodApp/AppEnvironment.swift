@@ -139,6 +139,7 @@ final class AppEnvironment {
     }
 
     var examplesURL: URL? { tools?.examples }
+    var looksURL: URL? { tools?.looks }
 
     /// Completion needs `synod-doc/1`; until the version is known it is on.
     var completionEnabled: Bool { version?.supportsDoc ?? true }

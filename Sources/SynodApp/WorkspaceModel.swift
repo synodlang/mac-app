@@ -26,7 +26,7 @@ struct SourceTarget: Equatable {
 
 @MainActor @Observable
 final class WorkspaceModel {
-    enum Origin: String, Hashable { case own, examples }
+    enum Origin: String, Hashable { case own, examples, looks }
 
     struct Item: Hashable, Identifiable {
         enum Kind: String, Hashable { case program, package }
@@ -43,6 +43,7 @@ final class WorkspaceModel {
 
     let workspace: Workspace
     let examples: Workspace?
+    let looks: Workspace?
     let isReadOnly: Bool
     let env: AppEnvironment
     let coordinator = RunCoordinator()
@@ -54,6 +55,7 @@ final class WorkspaceModel {
 
     private(set) var scan: Workspace.Scan
     private(set) var examplesScan: Workspace.Scan?
+    private(set) var looksScan: Workspace.Scan?
     var selection: Item?
     private(set) var stage: StageController?
     private(set) var stageError: String?
@@ -117,10 +119,14 @@ final class WorkspaceModel {
         scan = workspace.scan()
         let exURL = env.examplesURL
         let exWorkspace = exURL.flatMap { try? Workspace.open($0) }
-        isReadOnly = exWorkspace.map { Self.isInside(workspace.root, $0.root) } ?? false
+        let lkWorkspace = env.looksURL.flatMap { try? Workspace.open($0) }
+        isReadOnly = (exWorkspace.map { Self.isInside(workspace.root, $0.root) } ?? false)
+            || (lkWorkspace.map { Self.isInside(workspace.root, $0.root) } ?? false)
         examples = isReadOnly ? nil : exWorkspace
+        looks = isReadOnly ? nil : lkWorkspace
         examplesScan = examples?.scan()
-        editor = EditorModel(workspace: workspace, examples: examples, ownReadOnly: isReadOnly,
+        looksScan = looks?.scan()
+        editor = EditorModel(workspace: workspace, examples: examples, looks: looks, ownReadOnly: isReadOnly,
                              runner: { [env] in env.runner })
         completion = CompletionController(editor: editor, isEnabled: { [env] in env.completionEnabled })
 
@@ -187,13 +193,23 @@ final class WorkspaceModel {
 
     // MARK: Selection and running
 
-    func workspace(for origin: Origin) -> Workspace? { origin == .own ? workspace : examples }
+    func workspace(for origin: Origin) -> Workspace? {
+        switch origin { case .own: workspace; case .examples: examples; case .looks: looks }
+    }
+
+    func scan(for origin: Origin) -> Workspace.Scan {
+        switch origin {
+        case .own: scan
+        case .examples: examplesScan ?? scan
+        case .looks: looksScan ?? scan
+        }
+    }
 
     var activeWorkspace: Workspace? { selection.flatMap { workspace(for: $0.origin) } }
 
     var activeProgram: Workspace.Program? {
         guard let s = selection, s.kind == .program, let ws = workspace(for: s.origin) else { return nil }
-        let programs = (s.origin == .own ? scan : examplesScan ?? scan).programs
+        let programs = scan(for: s.origin).programs
         _ = ws
         return programs.first { $0.relPath == s.relPath }
     }
@@ -207,6 +223,7 @@ final class WorkspaceModel {
     func rescan() {
         scan = workspace.scan()
         examplesScan = examples?.scan()
+        looksScan = looks?.scan()
     }
 
     /// What a prompt-bar request needs, from Settings; nil when something is missing.
@@ -233,7 +250,7 @@ final class WorkspaceModel {
                 if runIt { run(.selection) }
             }
         case .package:
-            let list = (item.origin == .own ? scan : examplesScan ?? scan).packages
+            let list = scan(for: item.origin).packages
             if let pkg = list.first(where: { $0.relPath == item.relPath }), let f = pkg.files.first {
                 source = SourceTarget(file: relFile(pkg.relPath, f), origin: item.origin)
                 try? editor.show(file: relFile(pkg.relPath, f), origin: item.origin)

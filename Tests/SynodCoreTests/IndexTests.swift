@@ -209,11 +209,11 @@ func checkpointedStateEqualsNaiveReplay(example: String) throws {
 }
 
 @Test func versionParsing() {
-    let v = SynodVersion.parse("language 0.2\ncompiler v0.2.4 (f1262ee, 2026-10-22)\nformats synod-check/1 synod-trace/1 synod-scene/1\n")
-    #expect(v.language == "0.2")
+    let v = SynodVersion.parse("language 0.3\ncompiler v0.2.4 (f1262ee, 2026-10-22)\nformats synod-check/1 synod-trace/1 synod-scene/1\n")
+    #expect(v.language == "0.3")
     #expect(v.compiler.hasPrefix("v0.2.4"))
     #expect(v.isCompatible)
-    #expect(SynodVersion.parse("language 0.3\nformats synod-check/1 synod-trace/1 synod-scene/1").problem?.contains("0.2") == true)
-    #expect(SynodVersion.parse("language 0.2\nformats synod-trace/1").problem?.contains("synod-scene/1") == true)
+    #expect(SynodVersion.parse("language 0.2\nformats synod-check/1 synod-trace/1 synod-scene/1").problem?.contains("0.3") == true)
+    #expect(SynodVersion.parse("language 0.3\nformats synod-trace/1").problem?.contains("synod-scene/1") == true)
     #expect(SynodVersion.parse("").isCompatible == false)
 }

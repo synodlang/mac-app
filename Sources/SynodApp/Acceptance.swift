@@ -91,9 +91,42 @@ enum Acceptance {
         guard case .ran(let status, let sceneText, let scene, _) = outcome, case .ok = status.result else {
             throw HeadlessCommands.HeadlessError("the program did not run cleanly: \(HeadlessCommands.describe(outcome))")
         }
+        return try await acceptScene(name: program.name, sceneText: sceneText, scene: scene, out: out, quick: quick)
+    }
 
+    /// `Synod --scene-acceptance <scene.json>... --out <dir> [--quick]`: the export acceptance (video frames against
+    /// the stage player, PSNR and MAD per sample) for handmade scene files, such as the player's test scenes (M12).
+    static func runScenes(_ args: [String]) async -> Int32 {
+        let files = HeadlessCommands.positionals(after: "--scene-acceptance", in: args)
+        guard !files.isEmpty, let outPath = HeadlessCommands.value(of: "--out", in: args) else {
+            HeadlessCommands.fail("usage: --scene-acceptance <scene.json>... --out <dir> [--quick]")
+            return 2
+        }
+        let quick = args.contains("--quick")
+        let root = URL(fileURLWithPath: (outPath as NSString).expandingTildeInPath, isDirectory: true)
+        var bad = 0
+        for f in files {
+            let url = URL(fileURLWithPath: (f as NSString).expandingTildeInPath)
+            let name = url.deletingPathExtension().lastPathComponent
+            do {
+                let dir = root.appendingPathComponent(name, isDirectory: true)
+                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                let text = try String(contentsOf: url, encoding: .utf8)
+                let scene = try SceneSummary.parse(text)
+                HeadlessCommands.note("scene-acceptance: \(name)")
+                if try await acceptScene(name: name, sceneText: text, scene: scene, out: dir, quick: quick) != 0 { bad += 1 }
+            } catch {
+                HeadlessCommands.fail("\(name): \(error.localizedDescription)")
+                bad += 1
+            }
+        }
+        HeadlessCommands.note("scene-acceptance: \(files.count - bad)/\(files.count) passed")
+        return bad == 0 ? 0 : 1
+    }
+
+    private static func acceptScene(name: String, sceneText: String, scene: SceneSummary, out: URL, quick: Bool) async throws -> Int32 {
         // 1. Export through the normal Exporter.
-        let mp4 = out.appendingPathComponent("\(program.name).mp4")
+        let mp4 = out.appendingPathComponent("\(name).mp4")
         try? FileManager.default.removeItem(at: mp4)
         let assets = WebAssets.locate()
         var options = ExportOptions()
@@ -198,7 +231,7 @@ enum Acceptance {
         }
         if samples.isEmpty || results.count != samples.count { failures.append("not every sample was compared") }
         let report = Report(
-            pass: failures.isEmpty, program: program.name, quick: quick, frames: scan.frameCount,
+            pass: failures.isEmpty, program: name, quick: quick, frames: scan.frameCount,
             plan: PlanInfo(durationMs: plan.duration, fps: plan.fps, rate: plan.rate, frameCount: n),
             ptsExact: ptsExact, videoDuration: videoSeconds, nominalFrameRate: Double(info.nominalFrameRate),
             width: info.width, height: info.height, exportSeconds: result.elapsed,

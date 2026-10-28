@@ -127,9 +127,9 @@ public final class CompareController {
 
         let config = WKWebViewConfiguration()
         let ucc = config.userContentController
+        ucc.addUserScript(WKUserScript(source: assets.fontPrelude(), injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page))
         ucc.addUserScript(WKUserScript(source: try assets.playerScript(), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .page))
         ucc.addUserScript(WKUserScript(source: try assets.compareJS(), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .page))
-        let html = try assets.compareHTML()
 
         webView = WKWebView(frame: CGRect(origin: .zero, size: size), configuration: config)
         webView.setValue(false, forKey: "drawsBackground")
@@ -144,7 +144,7 @@ public final class CompareController {
             w.orderFrontRegardless()
             window = w
         }
-        webView.loadHTMLString(html, baseURL: nil)
+        assets.load("compare.html", in: webView)
     }
 
     public func tearDown() {

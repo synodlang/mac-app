@@ -160,7 +160,7 @@
   }
 
   async function boot() {
-    const player = SynodPlayer.mount("#stage", { autoplay: false, bridge: "synodPlayer" });
+    const player = SynodPlayer.mount("#stage", { autoplay: false, bridge: "synodPlayer", fontBase: window.synodFontBase });
     const canvas = document.querySelector("#stage canvas");
     const entry = (e) => (e ? { seq: e.seq, at: e.at } : null);
 

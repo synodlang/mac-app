@@ -130,7 +130,7 @@
     if (side.player) {
       side.player.setScene(text, { keepTime: false });
     } else {
-      side.player = SynodPlayer.createPlayer(side.canvas, text, { autoplay: false, stopAtPause: false });
+      side.player = SynodPlayer.createPlayer(side.canvas, text, { autoplay: false, stopAtPause: false, fontBase: window.synodFontBase });
     }
     side.duration = side.player.duration;
     side.knots = normalizeKnots(knots, side.duration);
