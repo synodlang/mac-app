@@ -7,7 +7,7 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.2.2.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.6), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.2), so it works offline.
+**v0.2.3.** The Mac app implements Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.7), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.3), so it works offline.
 
 What works:
 
@@ -62,7 +62,7 @@ scripts/acceptance-m10.sh # completion, the prompt bar with a fake claude, the e
 scripts/acceptance-m10-live.sh # your own Claude Code login and network: runs the live prompt-bar check (run it yourself)
 ```
 
-`deps.env` pins the bundled `synod` release, player release, examples commit and agent-skills release, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.2` prints the CHANGELOG section used as release notes.
+`deps.env` pins the bundled `synod` release, player release, examples commit and agent-skills release, each verified against the release `SHA256SUMS` and a hash pinned in this repository. `scripts/notes.sh --tag v0.2.3` prints the CHANGELOG section used as release notes.
 
 ## Where it fits
 
@@ -77,12 +77,12 @@ editor --> synod run --scene --trace --> scene.json --> player (WKWebView)
 | Repository | What it is | Status |
 | --- | --- | --- |
 | [dsl](https://github.com/synodlang/dsl) | The language specification and implementation guides | Spec v0.2 |
-| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run`, `doc`, `explain`, `mcp` | v0.2.6 released |
+| [compiler](https://github.com/synodlang/compiler) | The `synod` command: `fmt`, `check`, `run`, `doc`, `explain`, `mcp` | v0.2.7 released |
 | [std](https://github.com/synodlang/std) | The standard library packages | In use by the compiler |
 | [examples](https://github.com/synodlang/examples) | Sample programs and acceptance tests | Available |
 | [player](https://github.com/synodlang/player) | Canvas library that plays `scene.json` | v0.2.1 released |
-| **mac-app** (this repository) | The Mac app | v0.2.2 (M10) |
-| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.2 released |
+| **mac-app** (this repository) | The Mac app | v0.2.3 (M10) |
+| [agent-skills](https://github.com/synodlang/agent-skills) | Skills for coding agents | v0.2.3 released |
 | [synodlang.github.io](https://github.com/synodlang/synodlang.github.io) | The website and documentation | Install page live; rest planned (M11) |
 | [homebrew-tap](https://github.com/synodlang/homebrew-tap) | Homebrew formula for `synod` | Updated by compiler releases |
 | [scoop-bucket](https://github.com/synodlang/scoop-bucket) | Scoop manifest for `synod` | Updated by compiler releases |

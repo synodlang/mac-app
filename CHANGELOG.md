@@ -4,10 +4,18 @@ All notable changes to the Synod Mac app. Every `synodlang` repository shares MA
 
 ## Unreleased
 
+## v0.2.3 — 2026-10-28
+
+Implements Synod 0.2.
+
 ### Added
 
 - File ▸ New Workspace… (⇧⌘N) and a "New Workspace…" button on the Welcome window: name a folder, optionally set the module path (default `example.com/<name>`) or make a library, and the app runs the bundled `synod new`, opens the folder and shows its demo program. Errors, such as a folder that is not empty, appear in an alert with synod's message, so no terminal is needed to start.
 - Headless check `--new-workspace-check` (program workspace, library, existing folder, bad module path).
+
+### Changed
+
+- Bundled `synod` v0.2.7 and agent-skills v0.2.3; player v0.2.1 and examples v0.2.1 are unchanged. All pinned and verified in `deps.env`.
 
 ## v0.2.2 — 2026-10-23
 
