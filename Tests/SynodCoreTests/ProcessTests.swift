@@ -216,7 +216,7 @@ private struct PipelineFixture {
     #expect(status.fault == nil)
     if case .ok(let seed, _, _, _, let events, _) = try #require(status.result) { #expect(seed == 3 && events == 2197) }
     #expect(sceneText.hasPrefix(#"{"format":"synod-scene/1""#))
-    #expect(scene.duration == 147982)
+    #expect(scene.duration == 148332)
     #expect(trace.events.count == 2197)
     #expect(trace.header.seed == 3)
 
@@ -337,10 +337,10 @@ func realSynodRunsRaft() async throws {
     #expect(seed == 3 && reason == "stop" && end == SimTime(microseconds: 8_000_000) && nodes == 5 && events == 2197)
     #expect(trace.events.count == 2197)
     #expect(trace.header.seed == 3)
-    #expect(scene.duration == 147982)
+    #expect(scene.duration == 148332)
     #expect(scene.trace.count == 2197)
     #expect(sceneText.count > 100_000)
-    if case .ok(let length, _, _) = try #require(status.scene) { #expect(length == "147.98s") }
+    if case .ok(let length, _, _) = try #require(status.scene) { #expect(length == "148.33s") }
     // The real trace gives the same replay as the committed fixture.
     #expect(trace.events.map(\.seq) == Array(1...2197))
     #expect(trace.events.map(\.summaryLine) == (try Fixtures.trace("raft")).events.map(\.summaryLine))

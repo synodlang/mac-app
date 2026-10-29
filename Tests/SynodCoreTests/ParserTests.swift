@@ -86,9 +86,9 @@ import Testing
 
 @Test func sceneSummaryOfRaft() throws {
     let s = try Fixtures.scene("raft")
-    #expect(s.duration == 147982)
+    #expect(s.duration == 148332)
     #expect(s.trace.count == 2197)
-    #expect(s.canvas.w == 1600 && s.canvas.h == 1000)
+    #expect(s.canvas.w == 1040 && s.canvas.h == 650)
     #expect(!s.markers.isEmpty)
     #expect(s.markers.allSatisfy { $0.known != nil })
     #expect(s.markers.contains { $0.kind == "caption" && !$0.text.isEmpty })

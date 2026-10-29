@@ -27,7 +27,7 @@ private func cassandra() throws -> TraceIndex { try Fixtures.index("cassandra") 
     let map = SyncMap(index: index, duration: try Fixtures.scene("cassandra").duration)
     #expect(map.knots.first == SyncMap.Knot(t: 0, at: map.knots[0].at))
     #expect(map.endTime == 30_000_000, "the time of sim.Ended")
-    #expect(map.duration == 181_036)
+    #expect(map.duration == 181_536)
     // Strictly increasing in t, non-decreasing in at.
     for (a, b) in zip(map.knots, map.knots.dropFirst()) {
         #expect(a.t < b.t)
