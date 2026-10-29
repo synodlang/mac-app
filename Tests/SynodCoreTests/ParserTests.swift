@@ -116,7 +116,7 @@ import Testing
     let raw = try Fixtures.text("synced/examples/raft/trace.jsonl")
     let trace = try Trace.parse(Data(raw.utf8))
     #expect(trace.header.seed == 3)
-    #expect(trace.header.synod == "0.2")
+    #expect(trace.header.synod == "0.3")
     #expect(trace.header.program == "github.com/synodlang/examples/raft")
     #expect(trace.events.count == 2197)
 

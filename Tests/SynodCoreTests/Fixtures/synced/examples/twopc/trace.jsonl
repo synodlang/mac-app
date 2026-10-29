@@ -1,4 +1,4 @@
-{"format":"synod-trace/1","synod":"0.2","seed":1,"program":"github.com/synodlang/examples/twopc","packages":["github.com/synodlang/examples/twopc","std/lesson","std/lists","std/net","std/random","std/sim"]}
+{"format":"synod-trace/1","synod":"0.3","seed":1,"program":"github.com/synodlang/examples/twopc","packages":["github.com/synodlang/examples/twopc","std/lesson","std/lists","std/net","std/random","std/sim"]}
 {"seq":1,"t":0,"ev":"sim.Started"}
 {"seq":2,"t":0,"ev":"sim.Added","node":"n1","runs":["std/lists","std/net","std/random","std/sim","github.com/synodlang/examples/twopc"],"state":{"twopc.State":"idle","twopc.Participants":[]}}
 {"seq":3,"t":0,"ev":"sim.Added","node":"n2","runs":["std/lists","std/net","std/random","std/sim","github.com/synodlang/examples/twopc"],"state":{"twopc.State":"idle","twopc.Participants":[]}}

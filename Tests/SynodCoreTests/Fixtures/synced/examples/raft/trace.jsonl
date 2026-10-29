@@ -1,4 +1,4 @@
-{"format":"synod-trace/1","synod":"0.2","seed":3,"program":"github.com/synodlang/examples/raft","packages":["github.com/synodlang/examples/raft","github.com/synodlang/examples/raftlook","std/lesson","std/lists","std/look","std/look/basic","std/math","std/net","std/random","std/sim","std/text","std/theme","std/time"]}
+{"format":"synod-trace/1","synod":"0.3","seed":3,"program":"github.com/synodlang/examples/raft","packages":["github.com/synodlang/examples/raft","github.com/synodlang/examples/raftlook","std/lesson","std/lists","std/look","std/look/basic","std/math","std/net","std/random","std/sim","std/text","std/theme","std/time"]}
 {"seq":1,"t":0,"ev":"sim.Started"}
 {"seq":2,"t":0,"ev":"sim.Added","node":"n1","runs":["std/lists","std/math","std/net","std/random","std/sim","std/time","github.com/synodlang/examples/raft"],"state":{"raft.Role":"follower","raft.Term":0,"raft.VotedFor":{"node":null},"raft.Peers":[]}}
 {"seq":3,"t":0,"ev":"sim.Added","node":"n2","runs":["std/lists","std/math","std/net","std/random","std/sim","std/time","github.com/synodlang/examples/raft"],"state":{"raft.Role":"follower","raft.Term":0,"raft.VotedFor":{"node":null},"raft.Peers":[]}}

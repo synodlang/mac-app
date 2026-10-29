@@ -1,3 +1,3 @@
-{"format":"synod-trace/1","synod":"0.2","seed":1,"program":"example.com/t/p","packages":["std/sim"]}
+{"format":"synod-trace/1","synod":"0.3","seed":1,"program":"example.com/t/p","packages":["std/sim"]}
 {"seq":1,"t":0,"ev":"sim.Started"}
 {"seq":2,"t":600000000,"ev":"sim.Failed","code":"time-limit","message":"the run reached 10 minutes of simulated time","pos":null}
