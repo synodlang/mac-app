@@ -7,7 +7,7 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.3.0 (prepared, not tagged).** The Mac app implements Synod 0.3: it draws the 0.3 skins (fonts, glow, shadow, vignette, sketch, camera, drift), bundles the fonts and the `looks` module, and requires a compiler that reports language 0.3. Earlier text: v0.2.3 implemented Synod 0.2. It adds phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the M9 editor and learning modes. It bundles the `synod` compiler (v0.2.7), the player (v0.2.1), the examples (v0.2.1) and the agent-skills (v0.2.3), so it works offline.
+**v0.3.0.** The Mac app implements Synod 0.3: it draws the 0.3 skins (fonts, glow, shadow, vignette, sketch, camera, drift) and shows the bundled looks demos in the sidebar, next to the examples. It has phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the editor and the learning modes (Predict, Break it, Compare). It bundles the `synod` compiler (v0.3.0), the player and its fonts (v0.3.0), the examples (v0.3.0), the looks (v0.3.0) and the agent-skills (v0.3.0), so it works offline.
 
 What works:
 
@@ -146,6 +146,6 @@ To try Synod today, [install the `synod` command](https://synodlang.github.io/in
 
 Synod is named after the Synod protocol, the core consensus algorithm in Leslie Lamport's paper "The Part-Time Parliament" (ACM Transactions on Computer Systems, 1998; first submitted in 1990). The paper tells it as the story of the parliament of the ancient Greek island of Paxos, whose part-time legislators could agree on decrees although they came and went; today the algorithm is known as Paxos. Lamport later explained it plainly in "Paxos Made Simple" (2001), and in 2013 he received the ACM A.M. Turing Award for fundamental contributions to the theory and practice of distributed and concurrent systems. His "Time, Clocks, and the Ordering of Events in a Distributed System" (1978) and his TLA+ specification language shaped how we reason about such systems. We are grateful for his work, and we hope Synod honours it by making these ideas easier to watch and understand. The app is a place to watch, predict and break these protocols.
 
-Implements Synod 0.2 (specification: https://github.com/synodlang/dsl).
+Implements Synod 0.3 (specification: https://github.com/synodlang/dsl).
 
 Licensed under the [Apache License 2.0](LICENSE).

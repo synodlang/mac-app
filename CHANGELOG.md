@@ -2,9 +2,9 @@
 
 All notable changes to the Synod Mac app. Every `synodlang` repository shares MAJOR.MINOR with the language version.
 
-## Unreleased
+## v0.3.0 — 2026-10-29
 
-Prepared for v0.3.0 (Implements Synod 0.3); not tagged. The `deps.env` values marked TODO are filled by the release step.
+Implements Synod 0.3. Bundles synod v0.3.0, the player and its fonts v0.3.0, the examples v0.3.0, the looks v0.3.0 and the agent-skills v0.3.0.
 
 ### Added
 
