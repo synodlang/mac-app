@@ -2,6 +2,15 @@
 
 All notable changes to the Synod Mac app. Every `synodlang` repository shares MAJOR.MINOR with the language version.
 
+## v0.3.1 — 2026-10-29
+
+Implements Synod 0.3. The first published build of the 0.3 app: the v0.3.0 tag stopped at the release workflow's tag check, which still expected `v0.2.*`. The app is the v0.3.0 app; what 0.3 adds is in the [v0.3.0 section of the change log](https://github.com/synodlang/mac-app/blob/main/CHANGELOG.md#v030--2026-10-29): the 0.3 skins and fonts, the looks demos in the sidebar, and the bundled synod, player, examples, looks and agent-skills v0.3.0.
+
+### Fixed
+
+- The release workflow accepts `v0.3.*` tags.
+- `scripts/acceptance-m10-live.sh` makes its test modules with `synod 0.3` and examples v0.3.0.
+
 ## v0.3.0 — 2026-10-29
 
 Implements Synod 0.3. Bundles synod v0.3.0, the player and its fonts v0.3.0, the examples v0.3.0, the looks v0.3.0 and the agent-skills v0.3.0.

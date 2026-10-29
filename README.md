@@ -7,7 +7,7 @@ The Synod Mac app: an editor, an animated player and learning modes for watching
 
 ## Status
 
-**v0.3.0.** The Mac app implements Synod 0.3: it draws the 0.3 skins (fonts, glow, shadow, vignette, sketch, camera, drift) and shows the bundled looks demos in the sidebar, next to the examples. It has phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the editor and the learning modes (Predict, Break it, Compare). It bundles the `synod` compiler (v0.3.0), the player and its fonts (v0.3.0), the examples (v0.3.0), the looks (v0.3.0) and the agent-skills (v0.3.0), so it works offline.
+**v0.3.1.** The Mac app implements Synod 0.3: it draws the 0.3 skins (fonts, glow, shadow, vignette, sketch, camera, drift) and shows the bundled looks demos in the sidebar, next to the examples. It has phrase completion, a prompt bar that drives your own Claude Code, and an editor MCP server with its bridge, on top of the editor and the learning modes (Predict, Break it, Compare). It bundles the `synod` compiler (v0.3.0), the player and its fonts (v0.3.0), the examples (v0.3.0), the looks (v0.3.0) and the agent-skills (v0.3.0), so it works offline.
 
 What works:
 

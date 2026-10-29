@@ -20,8 +20,8 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME}"
           case "$tag" in
-            v0.2.*) ;;
-            *) echo "::error::tag $tag does not match v0.2.*"; exit 1 ;;
+            v0.3.*) ;;
+            *) echo "::error::tag $tag does not match v0.3.*"; exit 1 ;;
           esac
           scripts/notes.sh --tag "$tag" > notes.md
       - name: Select Xcode

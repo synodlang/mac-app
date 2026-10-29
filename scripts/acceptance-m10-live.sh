@@ -190,7 +190,7 @@ for run in 1 2 3; do
   say "-- run $run of 3"
   m="$work/acc-$run"
   mkdir -p "$m"
-  printf 'module example.com/acc\nsynod 0.2\n\nrequire github.com/synodlang/examples v0.2.1\n' > "$m/synod.mod"
+  printf 'module example.com/acc\nsynod 0.3\n\nrequire github.com/synodlang/examples v0.3.0\n' > "$m/synod.mod"
   printf 'out/\n' > "$m/.gitignore"
   if ! (cd "$m" && "$synod" get >> "$report" 2>&1); then result FAIL "synod get failed (network?)"; continue; fi
   before="$(cd "$m" && find . -name '*.synod' -not -path './vendor/*' | sort)"
