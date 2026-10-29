@@ -211,7 +211,8 @@ enum HeadlessLearning {
 
     /// `--hit-check <module> [--program p] [--report f]`: at 10 times of each program, `hitTest` at the
     /// center of every `nodeBounds` box returns that node (or a message dot, which is skipped); at least
-    /// 80% node hits and no mismatch. Then DOM clicks through `stage.js` select a node, a message and
+    /// 80% node hits and no mismatch. A message dot is also searched just outside the boxes, where flights
+    /// land; none in any program fails. Then DOM clicks through `stage.js` select a node, a message and
     /// a dragged box in the workspace model.
     static func hitCheck(_ args: [String]) async -> Int32 {
         let h = HeadlessCommands.self
@@ -228,6 +229,11 @@ enum HeadlessLearning {
                 let (c, msgHit) = await hitSamples(rig, program)
                 checks.append(c)
                 if firstMessage == nil, let m = msgHit { firstMessage = (program, m.at, m.x, m.y, m.msg) }
+            }
+            if firstMessage == nil {
+                var none = Check(name: "message dot found")
+                none.failures.append("no message dot was hit in any program (node centers and just outside the boxes)")
+                checks.append(none)
             }
             if let raft = rig.model.workspace.scan().programs.first(where: { $0.name == "raft" }) ?? rig.model.workspace.scan().programs.first {
                 checks.append(await domClicks(rig, raft, message: firstMessage))
@@ -267,6 +273,9 @@ enum HeadlessLearning {
                         fail("t \(Int(at)) ms: \(b.node) box center hit \(hit?.node ?? "nothing")")
                     }
                 }
+                // Flights run edge to edge, so a dot rests just outside a box, not on its center: look for one
+                // there (only until the first is found; the node-center probe above is unchanged).
+                if msgHit == nil { msgHit = try await messageDot(stage, boxes, at: at) }
             }
         } catch {
             fail(error.localizedDescription)
@@ -274,6 +283,7 @@ enum HeadlessLearning {
         c.metrics["samples"] = Double(total)
         c.metrics["nodeHits"] = Double(nodeHits)
         c.metrics["messageHits"] = Double(msgHits)
+        c.metrics["messageDotFound"] = msgHit == nil ? 0 : 1
         c.metrics["mismatches"] = Double(mismatches)
         // A message dot over a node's center is a message hit and is skipped; the rest must be node hits.
         let counted = total - msgHits
@@ -285,6 +295,25 @@ enum HeadlessLearning {
         if mismatches > 0 { fail("\(mismatches) mismatches") }
         c.ok = c.failures.isEmpty
         return (c, msgHit)
+    }
+
+    /// The first message dot found just outside a node box: the 4 edge midpoints and 4 corners pushed out
+    /// from 4 to 40 view px in steps of 4, then three points straight above the box (a self-message rests there).
+    static func messageDot(_ stage: StageController, _ boxes: [StageNodeBox], at: Double) async throws -> (at: Double, x: Double, y: Double, msg: Int)? {
+        for b in boxes {
+            let r = b.rect
+            let (cx, cy) = center(r)
+            var points: [(Double, Double)] = []
+            for d in stride(from: 4.0, through: 40.0, by: 4.0) {
+                points += [(cx, r.y - d), (cx, r.y + r.h + d), (r.x - d, cy), (r.x + r.w + d, cy),
+                           (r.x - d, r.y - d), (r.x + r.w + d, r.y - d), (r.x - d, r.y + r.h + d), (r.x + r.w + d, r.y + r.h + d)]
+            }
+            for d in [12.0, 24.0, 36.0] { points += [(cx - r.w / 4, r.y - d), (cx + r.w / 4, r.y - d), (cx, r.y - d - 6)] }
+            for (x, y) in points {
+                if let hit = try await stage.hitTest(x: x, y: y), let msg = hit.msg { return (at, x, y, msg) }
+            }
+        }
+        return nil
     }
 
     static func domClicks(_ rig: Rig, _ program: Workspace.Program,
@@ -339,7 +368,7 @@ enum HeadlessLearning {
                 } else { fail("no net.Sent for message \(m.msg)") }
                 c.metrics["messageSelected"] = got ? 1 : 0
             } else {
-                c.notes.append("no message dot was hit at a node center; message click not tested")
+                c.notes.append("no message dot was found at a node center or just outside a node box; message click not tested")
             }
         } catch {
             fail(error.localizedDescription)
